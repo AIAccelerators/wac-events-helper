@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2
+// @version      0.0.3
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -249,118 +249,52 @@ function renderSeries(event, agendaData) {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 function showModal(html) {
-    if (document.getElementById('tm-modal')) {
+    if (document.getElementById('tm-overlay')) {
         updateModalContent(html);
         return;
     }
 
-    // Semi-transparent backdrop — click to close
-    const backdrop = document.createElement('div');
-    backdrop.id = 'tm-backdrop';
-    Object.assign(backdrop.style, {
+    const overlay = document.createElement('div');
+    overlay.id = 'tm-overlay';
+    Object.assign(overlay.style, {
         position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
-        background: 'rgba(0,0,0,0.35)', zIndex: '99997',
+        background: 'rgba(0,0,0,0.45)', zIndex: '99997',
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
+        paddingTop: '60px', boxSizing: 'border-box',
     });
-    backdrop.addEventListener('click', closeModal);
-    document.body.appendChild(backdrop);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
-    // Modal window — fixed, initially centered
     const modal = document.createElement('div');
-    modal.id = 'tm-modal';
     Object.assign(modal.style, {
-        position: 'fixed',
-        top: '60px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: '99998',
-        background: '#fff',
-        borderRadius: '8px',
-        width: '740px',
-        maxWidth: '90vw',
-        maxHeight: '80vh',
-        display: 'flex',
-        flexDirection: 'column',
-        fontFamily: 'sans-serif',
-        fontSize: '13px',
-        lineHeight: '1.7',
+        background: '#fff', borderRadius: '8px', padding: '16px 20px',
+        width: '740px', maxWidth: '90vw', maxHeight: '80vh', overflowY: 'auto',
+        fontFamily: 'sans-serif', fontSize: '13px', lineHeight: '1.7',
         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
     });
 
-    // Drag handle header
-    const header = document.createElement('div');
-    Object.assign(header.style, {
-        background: '#e8e8e8',
-        borderRadius: '8px 8px 0 0',
-        padding: '7px 12px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        cursor: 'move',
-        userSelect: 'none',
-        flexShrink: '0',
-    });
-
-    const dragHint = document.createElement('span');
-    dragHint.textContent = '⠿ Events';
-    Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
-
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'cursor:pointer;padding:2px 8px;border:1px solid #aaa;border-radius:4px;background:#fff;font-size:13px;';
-    closeBtn.onclick = closeModal;
+    closeBtn.textContent = '✕ Закрити';
+    Object.assign(closeBtn.style, {
+        position: 'sticky', top: '0', float: 'right',
+        cursor: 'pointer', padding: '2px 8px',
+    });
+    closeBtn.onclick = () => overlay.remove();
 
-    header.appendChild(dragHint);
-    header.appendChild(closeBtn);
-
-    // Scrollable content area
     const content = document.createElement('div');
     content.id = 'tm-modal-content';
-    Object.assign(content.style, {
-        padding: '12px 16px',
-        overflowY: 'auto',
-        flexGrow: '1',
-    });
+    content.style.cssText = 'clear:both;padding-top:4px';
     content.innerHTML = html;
 
-    modal.appendChild(header);
+    modal.appendChild(closeBtn);
     modal.appendChild(content);
-    document.body.appendChild(modal);
-
-    // ── Drag logic ──
-    let dragging = false, ox = 0, oy = 0;
-
-    header.addEventListener('mousedown', e => {
-        if (e.target === closeBtn) return;
-        // Resolve transform to pixel coords on first drag
-        const rect = modal.getBoundingClientRect();
-        modal.style.transform = 'none';
-        modal.style.left = rect.left + 'px';
-        modal.style.top = rect.top + 'px';
-
-        dragging = true;
-        ox = e.clientX - rect.left;
-        oy = e.clientY - rect.top;
-        e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', () => { dragging = false; });
-
-    function onMove(e) {
-        if (!dragging) return;
-        modal.style.left = (e.clientX - ox) + 'px';
-        modal.style.top = (e.clientY - oy) + 'px';
-    }
-
-    function closeModal() {
-        modal.remove();
-        backdrop.remove();
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('keydown', escHandler);
-    }
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
 
     function escHandler(e) {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
     }
     document.addEventListener('keydown', escHandler);
 }
