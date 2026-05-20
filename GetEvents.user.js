@@ -313,16 +313,39 @@ function showModal(html) {
     dragHint.textContent = '⠿ Events';
     Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
 
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
-    Object.assign(closeBtn.style, {
+    const btnStyle = {
         cursor: 'pointer', padding: '2px 8px', border: '1px solid #aaa',
         borderRadius: '4px', background: '#fff', fontSize: '13px',
-    });
+    };
+
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = '📋 Copy';
+    Object.assign(copyBtn.style, btnStyle);
+    copyBtn.onclick = async () => {
+        const html = content.innerHTML;
+        const plain = content.innerText;
+        await navigator.clipboard.write([
+            new ClipboardItem({
+                'text/html':  new Blob([html],  { type: 'text/html' }),
+                'text/plain': new Blob([plain], { type: 'text/plain' }),
+            }),
+        ]);
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+    };
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    Object.assign(closeBtn.style, btnStyle);
     closeBtn.onclick = closeModal;
 
+    const btnGroup = document.createElement('div');
+    Object.assign(btnGroup.style, { display: 'flex', gap: '6px' });
+    btnGroup.appendChild(copyBtn);
+    btnGroup.appendChild(closeBtn);
+
     header.appendChild(dragHint);
-    header.appendChild(closeBtn);
+    header.appendChild(btnGroup);
 
     // Scrollable content area
     const content = document.createElement('div');
@@ -342,7 +365,7 @@ function showModal(html) {
     let dragging = false, ox = 0, oy = 0;
 
     header.addEventListener('mousedown', e => {
-        if (e.target === closeBtn) return;
+        if (e.target === closeBtn || e.target === copyBtn) return;
         // transform and left/top can't coexist — convert to pixel coords before dragging
         const rect = modal.getBoundingClientRect();
         modal.style.transform = 'none';
