@@ -256,14 +256,21 @@ function showModal(html) {
         return;
     }
 
-    // Semi-transparent backdrop — click to close
     const backdrop = document.createElement('div');
     backdrop.id = 'tm-backdrop';
     Object.assign(backdrop.style, {
         position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
         background: 'rgba(0,0,0,0.35)', zIndex: '99997',
     });
-    backdrop.addEventListener('click', closeModal);
+    // Close only when both mousedown and mouseup land on the backdrop,
+    // so text selection that ends outside the modal doesn't dismiss it.
+    backdrop.addEventListener('mousedown', e => {
+        if (e.target !== backdrop) return;
+        backdrop.addEventListener('mouseup', function onUp(e2) {
+            backdrop.removeEventListener('mouseup', onUp);
+            if (e2.target === backdrop) closeModal();
+        });
+    });
     document.body.appendChild(backdrop);
 
     // Modal window — fixed, initially centered
