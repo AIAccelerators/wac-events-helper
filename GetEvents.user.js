@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.5
+// @version      0.0.6
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -171,7 +171,8 @@ function escHtml(s) {
 }
 
 function getLang(event) {
-    return event.language || (Array.isArray(event.languages) && event.languages[0]) || '';
+    if (Array.isArray(event.languages) && event.languages.length) return event.languages.join(', ');
+    return event.language || '';
 }
 
 function eventPageUrl(event) {
@@ -233,7 +234,7 @@ function renderSeries(event, agendaData) {
                     : '';
                 const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
                 lines.push(
-                    `<div style="padding-left:16px">* ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
+                    `<div style="padding-left:16px"><b>•</b> ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
                 );
             });
         }
