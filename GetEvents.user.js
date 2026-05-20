@@ -231,7 +231,7 @@ function renderSeries(event, agendaData) {
                 const linkPart = streamUrl
                     ? ` (<a href="${escHtml(streamUrl)}" target="_blank">+link</a>)`
                     : '';
-                const talkUrl = `${eventPageUrl(event)}/talk/${item.id}`;
+                const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
                 lines.push(
                     `<div style="padding-left:16px">* ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
                 );
