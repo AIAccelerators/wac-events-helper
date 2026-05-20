@@ -230,9 +230,9 @@ function renderSeries(event, agendaData) {
                 const linkPart = streamUrl
                     ? ` (<a href="${escHtml(streamUrl)}" target="_blank">+link</a>)`
                     : '';
-                const talkUrl = `https://wearecommunity.io/events/${event.url}/talk/${item.id}`;
+                const talkUrl = `${eventPageUrl(event)}/talk/${item.id}`;
                 lines.push(
-                    `<div style="padding-left:16px">* ${t1} - ${t2} <a href="${talkUrl}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
+                    `<div style="padding-left:16px">* ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
                 );
             });
         }
@@ -307,7 +307,10 @@ function showModal(html) {
 
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'cursor:pointer;padding:2px 8px;border:1px solid #aaa;border-radius:4px;background:#fff;font-size:13px;';
+    Object.assign(closeBtn.style, {
+        cursor: 'pointer', padding: '2px 8px', border: '1px solid #aaa',
+        borderRadius: '4px', background: '#fff', fontSize: '13px',
+    });
     closeBtn.onclick = closeModal;
 
     header.appendChild(dragHint);
@@ -332,7 +335,7 @@ function showModal(html) {
 
     header.addEventListener('mousedown', e => {
         if (e.target === closeBtn) return;
-        // Resolve transform to pixel coords on first drag
+        // transform and left/top can't coexist — convert to pixel coords before dragging
         const rect = modal.getBoundingClientRect();
         modal.style.transform = 'none';
         modal.style.left = rect.left + 'px';
@@ -345,7 +348,9 @@ function showModal(html) {
     });
 
     document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', () => { dragging = false; });
+    document.addEventListener('mouseup', onMouseUp);
+
+    function onMouseUp() { dragging = false; }
 
     function onMove(e) {
         if (!dragging) return;
@@ -357,6 +362,7 @@ function showModal(html) {
         modal.remove();
         backdrop.remove();
         document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onMouseUp);
         document.removeEventListener('keydown', escHandler);
     }
 
