@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.3
+// @version      0.0.4
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -230,8 +230,9 @@ function renderSeries(event, agendaData) {
                 const linkPart = streamUrl
                     ? ` (<a href="${escHtml(streamUrl)}" target="_blank">+link</a>)`
                     : '';
+                const talkUrl = `https://wearecommunity.io/events/${event.url}/talk/${item.id}`;
                 lines.push(
-                    `<div style="padding-left:16px">* ${t1} - ${t2} ${escHtml(item.title)}${linkPart}</div>`
+                    `<div style="padding-left:16px">* ${t1} - ${t2} <a href="${talkUrl}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
                 );
             });
         }
@@ -249,52 +250,118 @@ function renderSeries(event, agendaData) {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 function showModal(html) {
-    if (document.getElementById('tm-overlay')) {
+    if (document.getElementById('tm-modal')) {
         updateModalContent(html);
         return;
     }
 
-    const overlay = document.createElement('div');
-    overlay.id = 'tm-overlay';
-    Object.assign(overlay.style, {
+    // Semi-transparent backdrop — click to close
+    const backdrop = document.createElement('div');
+    backdrop.id = 'tm-backdrop';
+    Object.assign(backdrop.style, {
         position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
-        background: 'rgba(0,0,0,0.45)', zIndex: '99997',
-        display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
-        paddingTop: '60px', boxSizing: 'border-box',
+        background: 'rgba(0,0,0,0.35)', zIndex: '99997',
     });
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    backdrop.addEventListener('click', closeModal);
+    document.body.appendChild(backdrop);
 
+    // Modal window — fixed, initially centered
     const modal = document.createElement('div');
+    modal.id = 'tm-modal';
     Object.assign(modal.style, {
-        background: '#fff', borderRadius: '8px', padding: '16px 20px',
-        width: '740px', maxWidth: '90vw', maxHeight: '80vh', overflowY: 'auto',
-        fontFamily: 'sans-serif', fontSize: '13px', lineHeight: '1.7',
+        position: 'fixed',
+        top: '60px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: '99998',
+        background: '#fff',
+        borderRadius: '8px',
+        width: '740px',
+        maxWidth: '90vw',
+        maxHeight: '80vh',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'sans-serif',
+        fontSize: '13px',
+        lineHeight: '1.7',
         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
     });
 
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕ Закрити';
-    Object.assign(closeBtn.style, {
-        position: 'sticky', top: '0', float: 'right',
-        cursor: 'pointer', padding: '2px 8px',
+    // Drag handle header
+    const header = document.createElement('div');
+    Object.assign(header.style, {
+        background: '#e8e8e8',
+        borderRadius: '8px 8px 0 0',
+        padding: '7px 12px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        cursor: 'move',
+        userSelect: 'none',
+        flexShrink: '0',
     });
-    closeBtn.onclick = () => overlay.remove();
 
+    const dragHint = document.createElement('span');
+    dragHint.textContent = '⠿ Events';
+    Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'cursor:pointer;padding:2px 8px;border:1px solid #aaa;border-radius:4px;background:#fff;font-size:13px;';
+    closeBtn.onclick = closeModal;
+
+    header.appendChild(dragHint);
+    header.appendChild(closeBtn);
+
+    // Scrollable content area
     const content = document.createElement('div');
     content.id = 'tm-modal-content';
-    content.style.cssText = 'clear:both;padding-top:4px';
+    Object.assign(content.style, {
+        padding: '12px 16px',
+        overflowY: 'auto',
+        flexGrow: '1',
+    });
     content.innerHTML = html;
 
-    modal.appendChild(closeBtn);
+    modal.appendChild(header);
     modal.appendChild(content);
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+
+    // ── Drag logic ──
+    let dragging = false, ox = 0, oy = 0;
+
+    header.addEventListener('mousedown', e => {
+        if (e.target === closeBtn) return;
+        // Resolve transform to pixel coords on first drag
+        const rect = modal.getBoundingClientRect();
+        modal.style.transform = 'none';
+        modal.style.left = rect.left + 'px';
+        modal.style.top = rect.top + 'px';
+
+        dragging = true;
+        ox = e.clientX - rect.left;
+        oy = e.clientY - rect.top;
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', () => { dragging = false; });
+
+    function onMove(e) {
+        if (!dragging) return;
+        modal.style.left = (e.clientX - ox) + 'px';
+        modal.style.top = (e.clientY - oy) + 'px';
+    }
+
+    function closeModal() {
+        modal.remove();
+        backdrop.remove();
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('keydown', escHandler);
+    }
 
     function escHandler(e) {
-        if (e.key === 'Escape') {
-            overlay.remove();
-            document.removeEventListener('keydown', escHandler);
-        }
+        if (e.key === 'Escape') closeModal();
     }
     document.addEventListener('keydown', escHandler);
 }
