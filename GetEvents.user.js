@@ -228,13 +228,10 @@ function renderSeries(event, agendaData) {
             speeches.forEach(item => {
                 const t1 = fmtTime(item.date, '.');
                 const t2 = fmtTime(item.date + item.duration_min * 60, '.');
-                const streamUrl = item.is_link_to_stream && item.stream_struct && item.stream_struct.url;
-                const linkPart = streamUrl
-                    ? ` (<a href="${escHtml(streamUrl)}" target="_blank">+link</a>)`
-                    : '';
                 const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
+
                 lines.push(
-                    `<div style="padding-left:16px"><b>•</b> ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${linkPart}</div>`
+                    `<div style="padding-left:16px"><b>•</b> ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
                 );
             });
         }
