@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.6
+// @version      0.0.7
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -204,46 +204,68 @@ function renderSingle(event) {
 }
 
 function renderSeries(event, agendaData) {
-    const link = eventPageUrl(event);
-    const lines = [
-        `<div>`,
-        `<div><b>Серія подій:</b> <a href="${link}" target="_blank">${escHtml(event.title)}</a></div>`,
-    ];
+    const seriesLink = eventPageUrl(event);
+    const lang = escHtml(getLang(event));
+    const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
 
     const items = agendaData && agendaData.agenda && agendaData.agenda.items;
-    if (items && items.length) {
-        const byDay = new Map();
-        items
-            .filter(i => i.is_speech)
-            .sort((a, b) => a.date - b.date)
-            .forEach(item => {
-                const d = tsDate(item.date);
-                const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-                if (!byDay.has(key)) byDay.set(key, { dayTs: item.date, speeches: [] });
-                byDay.get(key).speeches.push(item);
-            });
+    const speeches = items
+        ? items.filter(i => i.is_speech).sort((a, b) => a.date - b.date)
+        : [];
 
-        for (const { dayTs, speeches } of byDay.values()) {
-            lines.push(`<div>${fmtDate(dayTs)}:</div>`);
-            speeches.forEach(item => {
-                const t1 = fmtTime(item.date, '.');
-                const t2 = fmtTime(item.date + item.duration_min * 60, '.');
-                const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
-
-                lines.push(
-                    `<div style="padding-left:16px"><b>•</b> ${t1} - ${t2} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
-                );
-            });
-        }
-    } else {
-        lines.push(
-            `<div>${fmtDate(event.time_stamp.start)} — ${fmtDate(event.time_stamp.end)}</div>`
-        );
+    if (!speeches.length) {
+        return [
+            `<div>`,
+            `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+            `<div>${fmtDate(event.time_stamp.start)} — ${fmtDate(event.time_stamp.end)}</div>`,
+            `<div>Мова: ${lang}</div>`,
+            `</div>`,
+        ].join('\n');
     }
 
-    lines.push(`<div>Мова: ${escHtml(getLang(event))}</div>`);
-    lines.push(`</div>`);
-    return lines.join('\n');
+    const uniqueDays = new Set(speeches.map(item => {
+        const d = tsDate(item.date);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }));
+
+    function talkLinkPart(item) {
+        const streamUrl = item.is_link_to_stream && item.stream_struct && item.stream_struct.url;
+        return streamUrl ? ` (<a href="${escHtml(streamUrl)}" target="_blank">+link</a>)` : '';
+    }
+
+    if (uniqueDays.size === 1) {
+        // All talks on one day — grouped bullet list
+        const lines = [
+            `<div>`,
+            `<div>${fmtDate(speeches[0].date)}</div>`,
+            `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a>:</div>`,
+        ];
+        speeches.forEach(item => {
+            const t1 = fmtTime(item.date, ':');
+            const t2 = fmtTime(item.date + item.duration_min * 60, ':');
+            const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
+            lines.push(
+                `<div style="padding-left:16px"><b>•</b> ${t1} \u2013 ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${talkLinkPart(item)}</div>`
+            );
+        });
+        lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
+        return lines.join('\n');
+    } else {
+        // Talks spread across days — each talk as its own flat entry
+        return speeches.map(item => {
+            const t1 = fmtTime(item.date, ':');
+            const t2 = fmtTime(item.date + item.duration_min * 60, ':');
+            const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
+            return [
+                `<div>`,
+                `<div>${fmtDate(item.date)}, ${t1} - ${t2}</div>`,
+                `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+                `<div>TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${talkLinkPart(item)}</div>`,
+                `<div>Мова: ${lang}</div>`,
+                `</div>`,
+            ].join('\n');
+        }).join(divider);
+    }
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
