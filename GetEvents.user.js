@@ -100,7 +100,7 @@ async function onFetch() {
 
     btn.disabled = true;
     btn.textContent = 'Loading…';
-    showModal('<p>Завантаження…</p>');
+    showModal('<p>Завантаження…</p>', 'events');
 
     try {
         const events = await fetchAllEvents(dateFrom, dateTill);
@@ -127,7 +127,7 @@ async function onFetch() {
 
 async function showSettingsModal() {
     const html = createSettingsUIHtml();
-    showModal(html);
+    showModal(html, 'settings');
     attachSettingsHandlers();
 }
 
@@ -167,8 +167,8 @@ function attachSettingsHandlers() {
                 const results = await gmGet(
                     `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
                 );
-                if (results.skills && Array.isArray(results.skills)) {
-                    options = results.skills.map(s => s.title);
+                if (Array.isArray(results)) {
+                    options = results;
                     allOptions = [...new Set([...allOptions, ...options])];
                 }
             } catch (err) {
@@ -406,7 +406,7 @@ function renderSeries(event, agendaData) {
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
-function showModal(html) {
+function showModal(html, type = 'events') {
     if (document.getElementById('tm-modal')) {
         updateModalContent(html);
         return;
@@ -466,7 +466,7 @@ function showModal(html) {
     });
 
     const dragHint = document.createElement('span');
-    dragHint.textContent = '⠿ Events';
+    dragHint.textContent = type === 'settings' ? '⚙ Settings' : '⠿ Events';
     Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
 
     const btnStyle = {
@@ -474,31 +474,34 @@ function showModal(html) {
         borderRadius: '4px', background: '#fff', fontSize: '13px',
     };
 
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = '📋 Copy';
-    Object.assign(copyBtn.style, btnStyle);
-    copyBtn.onclick = async () => {
-        const html = content.innerHTML;
-        const plain = content.innerText;
-        await navigator.clipboard.write([
-            new ClipboardItem({
-                'text/html':  new Blob([html],  { type: 'text/html' }),
-                'text/plain': new Blob([plain], { type: 'text/plain' }),
-            }),
-        ]);
-        copyBtn.textContent = '✓ Copied!';
-        setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
-    };
+    const btnGroup = document.createElement('div');
+    Object.assign(btnGroup.style, { display: 'flex', gap: '6px' });
 
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
     Object.assign(closeBtn.style, btnStyle);
     closeBtn.onclick = closeModal;
-
-    const btnGroup = document.createElement('div');
-    Object.assign(btnGroup.style, { display: 'flex', gap: '6px' });
-    btnGroup.appendChild(copyBtn);
     btnGroup.appendChild(closeBtn);
+
+    // Add Copy button only for 'events' type
+    if (type === 'events') {
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = '📋 Copy';
+        Object.assign(copyBtn.style, btnStyle);
+        copyBtn.onclick = async () => {
+            const html = content.innerHTML;
+            const plain = content.innerText;
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    'text/html':  new Blob([html],  { type: 'text/html' }),
+                    'text/plain': new Blob([plain], { type: 'text/plain' }),
+                }),
+            ]);
+            copyBtn.textContent = '✓ Copied!';
+            setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+        };
+        btnGroup.insertBefore(copyBtn, closeBtn);
+    }
 
     header.appendChild(dragHint);
     header.appendChild(btnGroup);
@@ -521,7 +524,7 @@ function showModal(html) {
     let dragging = false, ox = 0, oy = 0;
 
     header.addEventListener('mousedown', e => {
-        if (e.target === closeBtn || e.target === copyBtn) return;
+        if (e.target === closeBtn || (type === 'events' && e.target === copyBtn)) return;
         // transform and left/top can't coexist — convert to pixel coords before dragging
         const rect = modal.getBoundingClientRect();
         modal.style.transform = 'none';
