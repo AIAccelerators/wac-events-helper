@@ -414,10 +414,6 @@ function showModal(html, type = 'events') {
     if (existingModal && currentType !== type) {
         const backdrop = document.getElementById('tm-backdrop');
         if (backdrop) backdrop.remove();
-        // Remove all document listeners before removing modal
-        document.removeEventListener('mousemove', existingModal._onMove);
-        document.removeEventListener('mouseup', existingModal._onMouseUp);
-        document.removeEventListener('keydown', existingModal._escHandler);
         existingModal.remove();
     } else if (existingModal) {
         // Same type - just update content
@@ -554,11 +550,6 @@ function showModal(html, type = 'events') {
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onMouseUp);
     document.addEventListener('keydown', escHandler);
-    
-    // Store listeners on modal for cleanup when switching types
-    modal._onMove = onMove;
-    modal._onMouseUp = onMouseUp;
-    modal._escHandler = escHandler;
 
     function onMouseUp() { dragging = false; }
 
