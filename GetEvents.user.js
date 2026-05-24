@@ -407,9 +407,12 @@ function renderSeries(event, agendaData) {
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 function showModal(html, type = 'events') {
-    if (document.getElementById('tm-modal')) {
-        updateModalContent(html);
-        return;
+    const existingModal = document.getElementById('tm-modal');
+    if (existingModal) {
+        // Close existing modal to recreate with new type/buttons
+        const backdrop = document.getElementById('tm-backdrop');
+        if (backdrop) backdrop.remove();
+        existingModal.remove();
     }
 
     const backdrop = document.createElement('div');
