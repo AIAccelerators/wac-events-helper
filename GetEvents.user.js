@@ -408,11 +408,17 @@ function renderSeries(event, agendaData) {
 
 function showModal(html, type = 'events') {
     const existingModal = document.getElementById('tm-modal');
-    if (existingModal) {
-        // Close existing modal to recreate with new type/buttons
+    const currentType = existingModal ? existingModal.getAttribute('data-modal-type') : null;
+    
+    // Only close and recreate if switching modal types (settings ↔ events)
+    if (existingModal && currentType !== type) {
         const backdrop = document.getElementById('tm-backdrop');
         if (backdrop) backdrop.remove();
         existingModal.remove();
+    } else if (existingModal) {
+        // Same type - just update content
+        updateModalContent(html);
+        return;
     }
 
     const backdrop = document.createElement('div');
@@ -435,6 +441,7 @@ function showModal(html, type = 'events') {
     // Modal window — fixed, initially centered
     const modal = document.createElement('div');
     modal.id = 'tm-modal';
+    modal.setAttribute('data-modal-type', type);
     Object.assign(modal.style, {
         position: 'fixed',
         top: '60px',
