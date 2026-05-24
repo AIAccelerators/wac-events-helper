@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.8
+// @version      0.0.9
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -414,6 +414,10 @@ function showModal(html, type = 'events') {
     if (existingModal && currentType !== type) {
         const backdrop = document.getElementById('tm-backdrop');
         if (backdrop) backdrop.remove();
+        // Remove all document listeners before removing modal
+        document.removeEventListener('mousemove', existingModal._onMove);
+        document.removeEventListener('mouseup', existingModal._onMouseUp);
+        document.removeEventListener('keydown', existingModal._escHandler);
         existingModal.remove();
     } else if (existingModal) {
         // Same type - just update content
@@ -549,6 +553,12 @@ function showModal(html, type = 'events') {
 
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('keydown', escHandler);
+    
+    // Store listeners on modal for cleanup when switching types
+    modal._onMove = onMove;
+    modal._onMouseUp = onMouseUp;
+    modal._escHandler = escHandler;
 
     function onMouseUp() { dragging = false; }
 
@@ -569,7 +579,6 @@ function showModal(html, type = 'events') {
     function escHandler(e) {
         if (e.key === 'Escape') closeModal();
     }
-    document.addEventListener('keydown', escHandler);
 }
 
 function updateModalContent(html) {
