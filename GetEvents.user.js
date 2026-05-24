@@ -126,69 +126,34 @@ async function onFetch() {
 }
 
 async function showSettingsModal() {
-    showModal(createSettingsUI());
+    const html = createSettingsUIHtml();
+    showModal(html);
+    attachSettingsHandlers();
 }
 
-function createSettingsUI() {
+function createSettingsUIHtml() {
     const currentTags = SettingsManager.getTags();
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = 'Search tags...';
-    Object.assign(searchInput.style, {
-        width: '100%',
-        padding: '6px 8px',
-        marginBottom: '10px',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        fontSize: '13px',
-        boxSizing: 'border-box',
-    });
+    const selectedHtml = currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('');
+    
+    return `
+        <h3>Select Tags</h3>
+        <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:6px 8px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
+        <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:10px;"></div>
+        <div id="tm-settings-selected" style="margin-bottom:10px;padding:8px;background:#f5f5f5;border-radius:4px;min-height:24px;"><strong>Selected (${currentTags.length}):</strong><br>${selectedHtml}</div>
+        <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;margin-top:10px;">Save Tags</button>
+        <button id="tm-settings-reset" style="padding:6px 12px;cursor:pointer;background:#6c757d;color:#fff;border:none;border-radius:4px;font-size:13px;margin-left:6px;margin-top:10px;">Reset to Defaults</button>
+    `;
+}
 
-    const dropdown = document.createElement('div');
-    Object.assign(dropdown.style, {
-        maxHeight: '200px',
-        overflowY: 'auto',
-        border: '1px solid #ddd',
-        borderRadius: '4px',
-        marginBottom: '10px',
-    });
-
-    const selectedList = document.createElement('div');
-    Object.assign(selectedList.style, {
-        marginBottom: '10px',
-        padding: '8px',
-        background: '#f5f5f5',
-        borderRadius: '4px',
-        minHeight: '24px',
-    });
-    selectedList.innerHTML = `<strong>Selected (${currentTags.length}):</strong><br>${currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = 'Save Tags';
-    Object.assign(saveBtn.style, {
-        padding: '6px 12px',
-        cursor: 'pointer',
-        background: '#007bff',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '4px',
-        fontSize: '13px',
-        marginTop: '10px',
-    });
-
-    const resetBtn = document.createElement('button');
-    resetBtn.textContent = 'Reset to Defaults';
-    Object.assign(resetBtn.style, {
-        padding: '6px 12px',
-        cursor: 'pointer',
-        background: '#6c757d',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '4px',
-        fontSize: '13px',
-        marginLeft: '6px',
-        marginTop: '10px',
-    });
+function attachSettingsHandlers() {
+    const currentTags = SettingsManager.getTags();
+    const searchInput = document.getElementById('tm-settings-search');
+    const dropdown = document.getElementById('tm-settings-dropdown');
+    const selectedList = document.getElementById('tm-settings-selected');
+    const saveBtn = document.getElementById('tm-settings-save');
+    const resetBtn = document.getElementById('tm-settings-reset');
+    
+    if (!searchInput || !dropdown || !saveBtn || !resetBtn) return;
 
     const tagCheckboxes = {};
     let allOptions = [...currentTags];
@@ -262,16 +227,6 @@ function createSettingsUI() {
     };
 
     updateDropdown('');
-
-    const container = document.createElement('div');
-    container.appendChild(document.createElement('h3')).textContent = 'Select Tags';
-    container.appendChild(searchInput);
-    container.appendChild(dropdown);
-    container.appendChild(selectedList);
-    container.appendChild(saveBtn);
-    container.appendChild(resetBtn);
-
-    return container.innerHTML;
 }
 
 function gmGet(url) {
