@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.7
+// @version      0.0.8
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
 // @match        https://wearecommunity.io/events?*
 // @match        https://wearecommunity.io/events/*
 // @grant        GM_xmlhttpRequest
+// @grant        GM_getValue
+// @grant        GM_setValue
 // ==/UserScript==
 
 (function () {
@@ -15,12 +17,38 @@
     createUI();
 })();
 
+// ─── Settings Manager ────────────────────────────────────────────────────────
+
+const SettingsManager = {
+    STORAGE_KEY: 'tm_selected_tags',
+    DEFAULT_TAGS: ['AI', 'Artificial intelligence'],
+
+    getTags() {
+        const stored = GM_getValue(this.STORAGE_KEY);
+        if (!stored) return this.DEFAULT_TAGS;
+        try {
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed : this.DEFAULT_TAGS;
+        } catch (_) {
+            return this.DEFAULT_TAGS;
+        }
+    },
+
+    setTags(tags) {
+        GM_setValue(this.STORAGE_KEY, JSON.stringify(tags));
+    },
+
+    reset() {
+        GM_setValue(this.STORAGE_KEY, '');
+    }
+};
+
 // ─── UI panel ────────────────────────────────────────────────────────────────
 
 function createUI() {
     const today = new Date();
     const weekLater = new Date(today);
-    weekLater.setDate(today.getDate() + 7);
+    weekLater.setDate(today.getDate() + 5);
 
     const panel = document.createElement('div');
     panel.id = 'tm-panel';
@@ -46,10 +74,12 @@ function createUI() {
     panel.innerHTML =
         `<label>Від: <input id="tm-from" type="date" value="${toInputDate(today)}"></label>` +
         `<label>До:&nbsp; <input id="tm-till" type="date" value="${toInputDate(weekLater)}"></label>` +
-        `<button id="tm-btn" style="padding:4px 12px;cursor:pointer;font-weight:bold;">Get schedule</button>`;
+        `<button id="tm-btn" style="padding:4px 12px;cursor:pointer;font-weight:bold;">Get schedule</button>` +
+        `<button id="tm-settings-btn" style="padding:4px 12px;cursor:pointer;font-weight:bold;">⚙ Settings</button>`;
 
     document.body.appendChild(panel);
     document.getElementById('tm-btn').addEventListener('click', onFetch);
+    document.getElementById('tm-settings-btn').addEventListener('click', showSettingsModal);
 }
 
 function toInputDate(d) {
@@ -95,6 +125,155 @@ async function onFetch() {
     }
 }
 
+async function showSettingsModal() {
+    showModal(createSettingsUI());
+}
+
+function createSettingsUI() {
+    const currentTags = SettingsManager.getTags();
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search tags...';
+    Object.assign(searchInput.style, {
+        width: '100%',
+        padding: '6px 8px',
+        marginBottom: '10px',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        fontSize: '13px',
+        boxSizing: 'border-box',
+    });
+
+    const dropdown = document.createElement('div');
+    Object.assign(dropdown.style, {
+        maxHeight: '200px',
+        overflowY: 'auto',
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        marginBottom: '10px',
+    });
+
+    const selectedList = document.createElement('div');
+    Object.assign(selectedList.style, {
+        marginBottom: '10px',
+        padding: '8px',
+        background: '#f5f5f5',
+        borderRadius: '4px',
+        minHeight: '24px',
+    });
+    selectedList.innerHTML = `<strong>Selected (${currentTags.length}):</strong><br>${currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save Tags';
+    Object.assign(saveBtn.style, {
+        padding: '6px 12px',
+        cursor: 'pointer',
+        background: '#007bff',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '4px',
+        fontSize: '13px',
+        marginTop: '10px',
+    });
+
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = 'Reset to Defaults';
+    Object.assign(resetBtn.style, {
+        padding: '6px 12px',
+        cursor: 'pointer',
+        background: '#6c757d',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '4px',
+        fontSize: '13px',
+        marginLeft: '6px',
+        marginTop: '10px',
+    });
+
+    const tagCheckboxes = {};
+    let allOptions = [...currentTags];
+
+    async function updateDropdown(query) {
+        dropdown.innerHTML = '';
+        let options = allOptions;
+
+        if (query.trim()) {
+            try {
+                const results = await gmGet(
+                    `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
+                );
+                if (results.skills && Array.isArray(results.skills)) {
+                    options = results.skills.map(s => s.title);
+                    allOptions = [...new Set([...allOptions, ...options])];
+                }
+            } catch (err) {
+                console.error('Tag search failed:', err);
+            }
+        }
+
+        options = [...new Set(options)].sort();
+
+        options.forEach(tag => {
+            const label = document.createElement('label');
+            Object.assign(label.style, {
+                display: 'block',
+                padding: '6px 8px',
+                cursor: 'pointer',
+                borderBottom: '1px solid #eee',
+            });
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = tag;
+            checkbox.checked = currentTags.includes(tag);
+            tagCheckboxes[tag] = checkbox;
+
+            const span = document.createElement('span');
+            span.textContent = escHtml(tag);
+            Object.assign(span.style, { marginLeft: '6px' });
+
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            dropdown.appendChild(label);
+        });
+    }
+
+    searchInput.addEventListener('input', e => updateDropdown(e.target.value));
+
+    saveBtn.onclick = () => {
+        const selected = Object.entries(tagCheckboxes)
+            .filter(([_, cb]) => cb.checked)
+            .map(([tag, _]) => tag);
+        if (selected.length > 0) {
+            SettingsManager.setTags(selected);
+            currentTags.length = 0;
+            currentTags.push(...selected);
+            updateDropdown('');
+            selectedList.innerHTML = `<strong>Selected (${selected.length}):</strong><br>${selected.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
+        }
+    };
+
+    resetBtn.onclick = () => {
+        SettingsManager.reset();
+        currentTags.length = 0;
+        currentTags.push(...SettingsManager.DEFAULT_TAGS);
+        updateDropdown('');
+        selectedList.innerHTML = `<strong>Selected (${SettingsManager.DEFAULT_TAGS.length}):</strong><br>${SettingsManager.DEFAULT_TAGS.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
+    };
+
+    updateDropdown('');
+
+    const container = document.createElement('div');
+    container.appendChild(document.createElement('h3')).textContent = 'Select Tags';
+    container.appendChild(searchInput);
+    container.appendChild(dropdown);
+    container.appendChild(selectedList);
+    container.appendChild(saveBtn);
+    container.appendChild(resetBtn);
+
+    return container.innerHTML;
+}
+
 function gmGet(url) {
     return new Promise((resolve, reject) => {
         GM_xmlhttpRequest({
@@ -118,9 +297,11 @@ function toAPIDate(isoDate) {
 async function fetchAllEvents(dateFrom, dateTill) {
     const from = encodeURIComponent(toAPIDate(dateFrom));
     const till = encodeURIComponent(toAPIDate(dateTill));
+    const tags = SettingsManager.getTags();
+    const tagParams = tags.map(t => `&tag%5B%5D=${encodeURIComponent(t)}`).join('');
     const base =
         `https://wearecommunity.io/api/v2/events.json?period=upcoming` +
-        `&tag%5B%5D=AI&tag%5B%5D=Artificial%20intelligence` +
+        tagParams +
         `&date_from=${from}&date_till=${till}`;
 
     const first = await gmGet(`${base}&start=0`);
