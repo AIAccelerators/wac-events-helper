@@ -134,7 +134,7 @@ async function showSettingsModal() {
 function createSettingsUIHtml() {
     const currentTags = SettingsManager.getTags();
     const selectedHtml = currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('');
-    
+
     return `
         <h3>Select Tags</h3>
         <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:6px 8px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
@@ -152,7 +152,7 @@ function attachSettingsHandlers() {
     const selectedList = document.getElementById('tm-settings-selected');
     const saveBtn = document.getElementById('tm-settings-save');
     const resetBtn = document.getElementById('tm-settings-reset');
-    
+
     if (!searchInput || !dropdown || !saveBtn || !resetBtn) return;
 
     const tagCheckboxes = {};
@@ -364,11 +364,6 @@ function renderSeries(event, agendaData) {
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }));
 
-    function talkLinkPart(item) {
-        const streamUrl = item.is_link_to_stream && item.stream_struct && item.stream_struct.url;
-        return streamUrl ? ` (<a href="${escHtml(streamUrl)}" target="_blank">+link</a>)` : '';
-    }
-
     if (uniqueDays.size === 1) {
         // All talks on one day — grouped bullet list
         const lines = [
@@ -381,7 +376,7 @@ function renderSeries(event, agendaData) {
             const t2 = fmtTime(item.date + item.duration_min * 60, ':');
             const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
             lines.push(
-                `<div style="padding-left:16px"><b>•</b> ${t1} \u2013 ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${talkLinkPart(item)}</div>`
+                `<div style="padding-left:16px"><b>•</b> ${t1} \u2013 ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
             );
         });
         lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
@@ -396,7 +391,7 @@ function renderSeries(event, agendaData) {
                 `<div>`,
                 `<div>${fmtDate(item.date)}, ${t1} - ${t2}</div>`,
                 `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
-                `<div>TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a>${talkLinkPart(item)}</div>`,
+                `<div>TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`,
                 `<div>Мова: ${lang}</div>`,
                 `</div>`,
             ].join('\n');
@@ -409,7 +404,7 @@ function renderSeries(event, agendaData) {
 function showModal(html, type = 'events') {
     const existingModal = document.getElementById('tm-modal');
     const currentType = existingModal ? existingModal.getAttribute('data-modal-type') : null;
-    
+
     // Only close and recreate if switching modal types (settings ↔ events)
     if (existingModal && currentType !== type) {
         const backdrop = document.getElementById('tm-backdrop');
