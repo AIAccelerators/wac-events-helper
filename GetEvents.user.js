@@ -3,7 +3,8 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.1.0
 // @description  Fetch and display AI events from wearecommunity.io via API
-// @author       You
+// @author       Oleksandr_Kovalenko2
+// @connect      wearecommunity.io/api/v2
 // @match        https://wearecommunity.io/events
 // @match        https://wearecommunity.io/events?*
 // @match        https://wearecommunity.io/events/*
@@ -11,6 +12,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
+// @updateURL    https://github.com/oleksandrkovalenkoigm/wac-events-helper/raw/main/GetEvents.user.js
+// @downloadURL  https://github.com/oleksandrkovalenkoigm/wac-events-helper/raw/main/GetEvents.user.js
 // ==/UserScript==
 
 (function () {
