@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.1.1
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
 // @connect      wearecommunity.io/api/v2
@@ -14,6 +14,7 @@
 // @grant        GM_addStyle
 // @updateURL    https://github.com/oleksandrkovalenkoigm/wac-events-helper/raw/main/GetEvents.user.js
 // @downloadURL  https://github.com/oleksandrkovalenkoigm/wac-events-helper/raw/main/GetEvents.user.js
+// @tag          utilities
 // ==/UserScript==
 
 (function () {
