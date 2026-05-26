@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.14
+// @version      0.0.15
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -130,7 +130,8 @@ async function onFetch() {
         );
 
         const dateFromTs = Math.floor(new Date(dateFrom).getTime() / 1000);
-        updateModalContent(renderEvents(realEvents, agendaMap, dateFromTs));
+        const dateTillTs = Math.floor(new Date(dateTill).getTime() / 1000);
+        updateModalContent(renderEvents(realEvents, agendaMap, dateFromTs, dateTillTs));
     } catch (err) {
         updateModalContent(`<p style="color:red">Помилка: ${escHtml(err.message)}</p>`);
     } finally {
@@ -342,13 +343,13 @@ function eventPageUrl(event) {
 
 // ─── Renderers ────────────────────────────────────────────────────────────────
 
-function renderEvents(events, agendaMap, dateFromTs) {
+function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
     const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
     const groupSeries = SettingsManager.getGroupSeries();
 
     const filtered = events.filter(e => {
-        if (e.size === 's') return e.time_stamp.start >= dateFromTs;
+        if (e.size === 's') return e.time_stamp.start >= dateFromTs && e.time_stamp.start < dateTillTs;
         return true;
     });
 
@@ -361,7 +362,7 @@ function renderEvents(events, agendaMap, dateFromTs) {
         const agendaData = agendaMap[e.id];
         const items = agendaData && agendaData.agenda && agendaData.agenda.items;
         if (items) {
-            const filteredTalks = items.filter(i => i.is_speech && i.date >= dateFromTs);
+            const filteredTalks = items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs);
             if (filteredTalks.length > 0) {
                 return Math.min(...filteredTalks.map(t => t.date));
             }
@@ -377,7 +378,7 @@ function renderEvents(events, agendaMap, dateFromTs) {
     });
 
     return indexed
-        .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs, groupSeries))
+        .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs, dateTillTs, groupSeries))
         .join(divider);
 }
 
@@ -395,14 +396,14 @@ function renderSingle(event) {
     ].join('\n');
 }
 
-function renderSeries(event, agendaData, dateFromTs, groupSeries = true) {
+function renderSeries(event, agendaData, dateFromTs, dateTillTs, groupSeries = true) {
     const seriesLink = eventPageUrl(event);
     const lang = escHtml(getLang(event));
     const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
 
     const items = agendaData && agendaData.agenda && agendaData.agenda.items;
     const speeches = items
-        ? items.filter(i => i.is_speech && i.date >= dateFromTs).sort((a, b) => a.date - b.date)
+        ? items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs).sort((a, b) => a.date - b.date)
         : [];
 
     if (!speeches.length) {
