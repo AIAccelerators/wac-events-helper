@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.18
+// @version      0.0.19
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -165,25 +165,31 @@ async function showSettingsModal() {
     attachSettingsHandlers();
 }
 
+function chipHtml(tags) {
+    return tags.map(t => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;padding:4px 12px;margin:4px 4px 4px 0;border-radius:12px;font-size:12px;">${escHtml(t)}<span style="margin-left:6px;cursor:pointer;font-weight:bold;" class="tm-chip-remove">×</span></span>`).join('');
+}
+
 function createSettingsUIHtml() {
     const currentTags = SettingsManager.getTags();
     const groupSeries = SettingsManager.getGroupSeries();
-    const selectedHtml = currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('');
+    const selectedHtml = chipHtml(currentTags);
 
     return `
-        <h4>Select Tags</h4>
+        <h4 style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#999;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e8e8e8;">Select Tags</h4>
         <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:6px 8px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
-        <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:10px;"></div>
-        <div id="tm-settings-selected" style="margin-bottom:10px;padding:8px;background:#f5f5f5;border-radius:4px;min-height:24px;"><strong>Selected (${currentTags.length}):</strong><br>${selectedHtml}</div>
+        <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:12px;"></div>
+        <div id="tm-settings-selected" style="margin-bottom:12px;min-height:24px;">${selectedHtml}</div>
 
-        <h4 style="margin-top:16px;">Display Options</h4>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+        <h4 style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#999;margin:16px 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e8e8e8;">Display Options</h4>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:16px;">
             <input id="tm-settings-group-series" type="checkbox" ${groupSeries ? 'checked' : ''} style="cursor:pointer;">
             <span>Group series events</span>
         </label>
 
-        <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;margin-top:10px;">Save</button>
-        <button id="tm-settings-reset" style="padding:6px 12px;cursor:pointer;background:#6c757d;color:#fff;border:none;border-radius:4px;font-size:13px;margin-left:6px;margin-top:10px;">Reset to Defaults</button>
+        <div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid #e8e8e8;">
+            <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;flex:1;">Save</button>
+            <button id="tm-settings-reset" style="padding:6px 12px;cursor:pointer;background:#fff;color:#666;border:1px solid #ccc;border-radius:4px;font-size:13px;flex:1;">Reset</button>
+        </div>
     `;
 }
 
@@ -257,7 +263,7 @@ function attachSettingsHandlers() {
             currentTags.length = 0;
             currentTags.push(...selected);
             updateDropdown('');
-            selectedList.innerHTML = `<strong>Selected (${selected.length}):</strong><br>${selected.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
+            selectedList.innerHTML = chipHtml(selected);
         }
         SettingsManager.setGroupSeries(groupSeriesCheckbox.checked);
     };
@@ -267,7 +273,7 @@ function attachSettingsHandlers() {
         currentTags.length = 0;
         currentTags.push(...SettingsManager.DEFAULT_TAGS);
         updateDropdown('');
-        selectedList.innerHTML = `<strong>Selected (${SettingsManager.DEFAULT_TAGS.length}):</strong><br>${SettingsManager.DEFAULT_TAGS.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
+        selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
         groupSeriesCheckbox.checked = SettingsManager.DEFAULT_GROUP_SERIES;
     };
 
@@ -589,8 +595,7 @@ function showModal(html, type = 'events') {
     Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
 
     const btnStyle = {
-        cursor: 'pointer', padding: '2px 8px', border: '1px solid #aaa',
-        borderRadius: '4px', background: '#fff', fontSize: '13px',
+        cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', background: '#fff', fontSize: '13px',
     };
 
     const btnGroup = document.createElement('div');
@@ -598,7 +603,7 @@ function showModal(html, type = 'events') {
 
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';
-    Object.assign(closeBtn.style, btnStyle);
+    Object.assign(closeBtn.style, { ...btnStyle, border: 'none', color: '#666' });
     closeBtn.onclick = closeModal;
     btnGroup.appendChild(closeBtn);
 
@@ -607,7 +612,7 @@ function showModal(html, type = 'events') {
     if (type === 'events') {
         copyBtn = document.createElement('button');
         copyBtn.textContent = '📋 Copy';
-        Object.assign(copyBtn.style, btnStyle);
+        Object.assign(copyBtn.style, { ...btnStyle, border: '1px solid #ccc' });
         copyBtn.onclick = async () => {
             const html = content.innerHTML;
             const plain = content.innerText;
@@ -630,7 +635,7 @@ function showModal(html, type = 'events') {
     const content = document.createElement('div');
     content.id = 'tm-modal-content';
     Object.assign(content.style, {
-        padding: '10px 12px',
+        padding: type === 'settings' ? '16px 16px 12px 16px' : '10px 12px',
         overflowY: 'auto',
         flexGrow: '1',
     });
