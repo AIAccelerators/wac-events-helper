@@ -42,7 +42,7 @@ const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
     STORAGE_KEY_GROUP_SERIES: 'tm_group_series',
     DEFAULT_TAGS: ['AI', 'Artificial intelligence'],
-    DEFAULT_GROUP_SERIES: true,
+    DEFAULT_GROUP_SERIES: false,
 
     getTags() {
         const stored = GM_getValue(this.STORAGE_KEY);
