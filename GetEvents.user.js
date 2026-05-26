@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.10
+// @version      0.0.13
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -116,7 +116,8 @@ async function onFetch() {
                 })
         );
 
-        updateModalContent(renderEvents(realEvents, agendaMap));
+        const dateFromTs = Math.floor(new Date(dateFrom).getTime() / 1000);
+        updateModalContent(renderEvents(realEvents, agendaMap, dateFromTs));
     } catch (err) {
         updateModalContent(`<p style="color:red">Помилка: ${escHtml(err.message)}</p>`);
     } finally {
@@ -136,7 +137,7 @@ function createSettingsUIHtml() {
     const selectedHtml = currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('');
 
     return `
-        <h3>Select Tags</h3>
+        <h4>Select Tags</h4>
         <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:6px 8px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
         <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:10px;"></div>
         <div id="tm-settings-selected" style="margin-bottom:10px;padding:8px;background:#f5f5f5;border-radius:4px;min-height:24px;"><strong>Selected (${currentTags.length}):</strong><br>${selectedHtml}</div>
@@ -317,11 +318,41 @@ function eventPageUrl(event) {
 
 // ─── Renderers ────────────────────────────────────────────────────────────────
 
-function renderEvents(events, agendaMap) {
+function renderEvents(events, agendaMap, dateFromTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
     const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
-    return events
-        .map(e => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id]))
+
+    const filtered = events.filter(e => {
+        if (e.size === 's') return e.time_stamp.start >= dateFromTs;
+        return true;
+    });
+
+    // Calculate sort key for each event: for series, use earliest filtered talk date; for singles, use start time
+    const sortKeys = filtered.map(e => {
+        if (e.size === 's') {
+            return e.time_stamp.start;
+        }
+        // For series events, find earliest filtered talk date
+        const agendaData = agendaMap[e.id];
+        const items = agendaData && agendaData.agenda && agendaData.agenda.items;
+        if (items) {
+            const filteredTalks = items.filter(i => i.is_speech && i.date >= dateFromTs);
+            if (filteredTalks.length > 0) {
+                return Math.min(...filteredTalks.map(t => t.date));
+            }
+        }
+        // If no future talks found, use series start (will likely not appear, but be safe)
+        return e.time_stamp.start;
+    });
+
+    const indexed = filtered.map((e, i) => ({ event: e, sortKey: sortKeys[i] }));
+    indexed.sort((a, b) => {
+        if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+        return a.event.title.localeCompare(b.event.title, 'uk');
+    });
+
+    return indexed
+        .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs))
         .join(divider);
 }
 
@@ -339,14 +370,14 @@ function renderSingle(event) {
     ].join('\n');
 }
 
-function renderSeries(event, agendaData) {
+function renderSeries(event, agendaData, dateFromTs) {
     const seriesLink = eventPageUrl(event);
     const lang = escHtml(getLang(event));
     const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
 
     const items = agendaData && agendaData.agenda && agendaData.agenda.items;
     const speeches = items
-        ? items.filter(i => i.is_speech).sort((a, b) => a.date - b.date)
+        ? items.filter(i => i.is_speech && i.date >= dateFromTs).sort((a, b) => a.date - b.date)
         : [];
 
     if (!speeches.length) {
