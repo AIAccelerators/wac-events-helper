@@ -83,7 +83,7 @@ const SettingsManager = {
 function createUI() {
     const today = new Date();
     const weekLater = new Date(today);
-    weekLater.setDate(today.getDate() + 5);
+    weekLater.setDate(today.getDate() + 6);
 
     const panel = document.createElement('div');
     panel.id = 'tm-panel';
@@ -627,7 +627,7 @@ function showModal(html, type = 'events') {
     modal.setAttribute('data-modal-type', type);
     Object.assign(modal.style, {
         position: 'fixed',
-        top: '60px',
+        top: '80px',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: '99998',
