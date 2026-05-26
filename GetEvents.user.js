@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9
+// @version      0.0.10
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -489,8 +489,9 @@ function showModal(html, type = 'events') {
     btnGroup.appendChild(closeBtn);
 
     // Add Copy button only for 'events' type
+    let copyBtn = null;
     if (type === 'events') {
-        const copyBtn = document.createElement('button');
+        copyBtn = document.createElement('button');
         copyBtn.textContent = '📋 Copy';
         Object.assign(copyBtn.style, btnStyle);
         copyBtn.onclick = async () => {
@@ -498,7 +499,7 @@ function showModal(html, type = 'events') {
             const plain = content.innerText;
             await navigator.clipboard.write([
                 new ClipboardItem({
-                    'text/html':  new Blob([html],  { type: 'text/html' }),
+                    'text/html':  new Blob([html], { type: 'text/html' }),
                     'text/plain': new Blob([plain], { type: 'text/plain' }),
                 }),
             ]);
