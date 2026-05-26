@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.13
+// @version      0.0.14
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -21,7 +21,9 @@
 
 const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
+    STORAGE_KEY_GROUP_SERIES: 'tm_group_series',
     DEFAULT_TAGS: ['AI', 'Artificial intelligence'],
+    DEFAULT_GROUP_SERIES: true,
 
     getTags() {
         const stored = GM_getValue(this.STORAGE_KEY);
@@ -38,8 +40,19 @@ const SettingsManager = {
         GM_setValue(this.STORAGE_KEY, JSON.stringify(tags));
     },
 
+    getGroupSeries() {
+        const stored = GM_getValue(this.STORAGE_KEY_GROUP_SERIES);
+        if (stored === undefined || stored === null || stored === '') return this.DEFAULT_GROUP_SERIES;
+        return stored === 'true' || stored === true;
+    },
+
+    setGroupSeries(value) {
+        GM_setValue(this.STORAGE_KEY_GROUP_SERIES, String(value));
+    },
+
     reset() {
         GM_setValue(this.STORAGE_KEY, '');
+        GM_setValue(this.STORAGE_KEY_GROUP_SERIES, '');
     }
 };
 
@@ -134,6 +147,7 @@ async function showSettingsModal() {
 
 function createSettingsUIHtml() {
     const currentTags = SettingsManager.getTags();
+    const groupSeries = SettingsManager.getGroupSeries();
     const selectedHtml = currentTags.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('');
 
     return `
@@ -141,6 +155,13 @@ function createSettingsUIHtml() {
         <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:6px 8px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
         <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:10px;"></div>
         <div id="tm-settings-selected" style="margin-bottom:10px;padding:8px;background:#f5f5f5;border-radius:4px;min-height:24px;"><strong>Selected (${currentTags.length}):</strong><br>${selectedHtml}</div>
+
+        <h4 style="margin-top:16px;">Display Options</h4>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;">
+            <input id="tm-settings-group-series" type="checkbox" ${groupSeries ? 'checked' : ''} style="cursor:pointer;">
+            <span>Group series events</span>
+        </label>
+
         <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;margin-top:10px;">Save Tags</button>
         <button id="tm-settings-reset" style="padding:6px 12px;cursor:pointer;background:#6c757d;color:#fff;border:none;border-radius:4px;font-size:13px;margin-left:6px;margin-top:10px;">Reset to Defaults</button>
     `;
@@ -153,8 +174,9 @@ function attachSettingsHandlers() {
     const selectedList = document.getElementById('tm-settings-selected');
     const saveBtn = document.getElementById('tm-settings-save');
     const resetBtn = document.getElementById('tm-settings-reset');
+    const groupSeriesCheckbox = document.getElementById('tm-settings-group-series');
 
-    if (!searchInput || !dropdown || !saveBtn || !resetBtn) return;
+    if (!searchInput || !dropdown || !saveBtn || !resetBtn || !groupSeriesCheckbox) return;
 
     const tagCheckboxes = {};
     let allOptions = [...currentTags];
@@ -217,6 +239,7 @@ function attachSettingsHandlers() {
             updateDropdown('');
             selectedList.innerHTML = `<strong>Selected (${selected.length}):</strong><br>${selected.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
         }
+        SettingsManager.setGroupSeries(groupSeriesCheckbox.checked);
     };
 
     resetBtn.onclick = () => {
@@ -225,6 +248,7 @@ function attachSettingsHandlers() {
         currentTags.push(...SettingsManager.DEFAULT_TAGS);
         updateDropdown('');
         selectedList.innerHTML = `<strong>Selected (${SettingsManager.DEFAULT_TAGS.length}):</strong><br>${SettingsManager.DEFAULT_TAGS.map(t => `<span style="display:inline-block;background:#ddd;padding:2px 6px;margin:2px 2px 2px 0;border-radius:3px;">${escHtml(t)}</span>`).join('')}`;
+        groupSeriesCheckbox.checked = SettingsManager.DEFAULT_GROUP_SERIES;
     };
 
     updateDropdown('');
@@ -321,6 +345,7 @@ function eventPageUrl(event) {
 function renderEvents(events, agendaMap, dateFromTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
     const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
+    const groupSeries = SettingsManager.getGroupSeries();
 
     const filtered = events.filter(e => {
         if (e.size === 's') return e.time_stamp.start >= dateFromTs;
@@ -352,7 +377,7 @@ function renderEvents(events, agendaMap, dateFromTs) {
     });
 
     return indexed
-        .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs))
+        .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs, groupSeries))
         .join(divider);
 }
 
@@ -370,7 +395,7 @@ function renderSingle(event) {
     ].join('\n');
 }
 
-function renderSeries(event, agendaData, dateFromTs) {
+function renderSeries(event, agendaData, dateFromTs, groupSeries = true) {
     const seriesLink = eventPageUrl(event);
     const lang = escHtml(getLang(event));
     const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
@@ -390,30 +415,49 @@ function renderSeries(event, agendaData, dateFromTs) {
         ].join('\n');
     }
 
-    const uniqueDays = new Set(speeches.map(item => {
-        const d = tsDate(item.date);
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    }));
+    if (groupSeries) {
+        // Group all talks together under the series name
+        const uniqueDays = new Set(speeches.map(item => {
+            const d = tsDate(item.date);
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }));
 
-    if (uniqueDays.size === 1) {
-        // All talks on one day — grouped bullet list
-        const lines = [
-            `<div>`,
-            `<div>${fmtDate(speeches[0].date)}</div>`,
-            `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a>:</div>`,
-        ];
-        speeches.forEach(item => {
-            const t1 = fmtTime(item.date, ':');
-            const t2 = fmtTime(item.date + item.duration_min * 60, ':');
-            const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
-            lines.push(
-                `<div style="padding-left:16px"><b>•</b> ${t1} \u2013 ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
-            );
-        });
-        lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
-        return lines.join('\n');
+        if (uniqueDays.size === 1) {
+            // All talks on one day — grouped bullet list
+            const lines = [
+                `<div>`,
+                `<div>${fmtDate(speeches[0].date)}</div>`,
+                `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a>:</div>`,
+            ];
+            speeches.forEach(item => {
+                const t1 = fmtTime(item.date, ':');
+                const t2 = fmtTime(item.date + item.duration_min * 60, ':');
+                const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
+                lines.push(
+                    `<div style="padding-left:16px"><b>•</b> ${t1} \u2013 ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
+                );
+            });
+            lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
+            return lines.join('\n');
+        } else {
+            // Talks spread across days — grouped with series header followed by all talks
+            const lines = [
+                `<div>`,
+                `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+            ];
+            speeches.forEach(item => {
+                const t1 = fmtTime(item.date, ':');
+                const t2 = fmtTime(item.date + item.duration_min * 60, ':');
+                const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
+                lines.push(
+                    `<div style="padding-left:16px"><b>•</b> ${fmtDate(item.date)}, ${t1} - ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
+                );
+            });
+            lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
+            return lines.join('\n');
+        }
     } else {
-        // Talks spread across days — each talk as its own flat entry
+        // Ungrouped mode: each talk as its own flat entry with series reference
         return speeches.map(item => {
             const t1 = fmtTime(item.date, ':');
             const t2 = fmtTime(item.date + item.duration_min * 60, ':');
