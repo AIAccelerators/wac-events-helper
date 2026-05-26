@@ -16,18 +16,33 @@ No build system, no package manager, no dependencies. The `.user.js` file is ins
 
 ## Architecture
 
-Everything lives in a single IIFE in `GetEvents.user.js`. Execution flow:
+Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flows:
 
-1. `createUI()` — injects a fixed date-range panel into the page on load.
-2. User clicks "Get schedule" → `onFetch()` reads dates, opens a loading modal, then:
-   - `fetchAllEvents(from, till)` — paginates `wearecommunity.io/api/v2/events.json` (AI tag filter); strips ad entries (`is_ad`) and non-numeric IDs.
+1. **UI Panel** (`createUI()`) — injects a fixed date-range panel at page top (stays visible during scroll).
+   - Displays date inputs, "Get schedule" button, and "⚙ Settings" button.
+
+2. **Settings Flow** — click "⚙ Settings":
+   - Opens a draggable modal with tag search and selection checkboxes.
+   - `SettingsManager` persists tag selection via `GM_getValue`/`GM_setValue` (key: `tm_selected_tags`).
+   - Default tags: `["AI", "Artificial intelligence"]`.
+   - Tag search queries `/api/v2/dictionaries/skills/search?search_query={query}` (returns array of strings).
+
+3. **Events Flow** — click "Get schedule":
+   - Opens a loading modal, then:
+   - `fetchAllEvents(from, till)` — paginates `/api/v2/events.json` with user-selected tags; strips ad entries (`is_ad`) and non-numeric IDs.
    - For each non-small event: `fetchAgenda(id)` in parallel — appends `cf=<timestamp>` to bust CDN cache.
-3. `renderEvents(events, agendaMap)` — dispatches to `renderSingle` (size `'s'`) or `renderSeries` (multi-day/conference); falls back to event-level dates if agenda fetch failed silently.
-4. Result injected into a draggable modal (`showModal` / `updateModalContent`).
+   - `renderEvents(events, agendaMap)` — dispatches to `renderSingle` (size `'s'`) or `renderSeries` (multi-day/conference).
+   - Results rendered in an events modal with Copy (📋) and Close buttons.
+
+### Modal System
+
+- **Type tracking**: Each modal stores `data-modal-type` attribute (`'settings'` or `'events'`).
+- **Smart recreation**: Same type updates content only (preserves drag listeners); different type closes and recreates with appropriate buttons/header.
+- **Drag implementation**: Header draggable except on button areas. Converts CSS `transform` to pixel coords on first drag to avoid accumulation errors.
+- **Button logic**: Close button always present; Copy button only for events modal. Drag prevents on button targets.
 
 ### Key conventions
 
 - `gmGet(url)` — wraps `GM_xmlhttpRequest` in a Promise; all network calls go through it.
-- Dates displayed in Ukrainian locale using hard-coded day/month arrays (`DAYS_UK`, `MONTHS_UK`), not `Intl`.
-- Drag logic resolves CSS `transform` to pixel coordinates on first drag to avoid accumulation errors.
-- `initial-prompt.txt` contains the original Ukrainian-language spec with a sample API response — useful as a design reference.
+- Dates displayed in Ukrainian locale using hard-coded day/month arrays (`UA_DAYS`, `UA_MONTHS`), not `Intl`.
+- HTML generation separated from listener attachment (e.g., `createSettingsUIHtml()` + `attachSettingsHandlers()`).
