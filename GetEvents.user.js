@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.20
+// @version      0.1.0
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
