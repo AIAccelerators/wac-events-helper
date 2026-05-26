@@ -1,89 +1,62 @@
 # Copilot Instructions for This Repository
 
 ## Build, Test, and Lint Commands
-- **No build, test, or lint commands are present.**
-- The project is a single-file Tampermonkey userscript (`GetEvents.user.js`).
-- To update/test: Drag `GetEvents.user.js` into the Tampermonkey dashboard or open it in Chrome/Firefox with Tampermonkey enabled. Test at https://wearecommunity.io/events.
-- Bump the `@version` in the userscript header for each release.
+- No build, lint, or automated test suite is defined (single-file userscript project).
+- Syntax check:
+  - `node -c GetEvents.user.js`
+- Single-test command:
+  - Not applicable (no test runner or test files exist).
+- Manual verification flow:
+  1. Install/update by opening or dragging `GetEvents.user.js` into Tampermonkey.
+  2. Open `https://wearecommunity.io/events`.
+  3. Validate both flows: `Settings` (tag search/save/reset, group-series toggle) and `Get schedule` (fetch + modal render + copy).
+- For releases, bump `@version` in the userscript header.
 
 ## High-Level Architecture
-- **Single-file userscript**: All logic is in `GetEvents.user.js` as a self-invoking function.
-- **Main UI Panel**: On page load, `createUI()` injects a fixed date-range panel (dates + "Get schedule" + "⚙ Settings" buttons) at the top center.
-- **Two Modal Types**:
-  - **Settings Modal** (type='settings'): Close button only (✕), header "⚙ Settings"
-  - **Events Modal** (type='events'): Copy (📋) + Close buttons, header "⠿ Events"
-- **Dynamic Tag Selection**: `SettingsManager` manages persistent tag selection via `GM_getValue`/`GM_setValue`. Default tags: `["AI", "Artificial intelligence"]`.
-  - User clicks "⚙ Settings" → Settings modal opens
-  - User searches tags via `/api/v2/dictionaries/skills/search?search_query={query}` endpoint
-  - API returns array of strings: `["Ragas", "Ray", "GraphRAG", ...]`
-  - User selects/saves → Persisted and used for event filtering
-- **Event Flow**: Click "Get schedule" → Events modal opens with results, Copy button available
-- **Network**: All API calls via `gmGet(url)` Promise wrapper for `GM_xmlhttpRequest`.
-- **Rendering**: Events using Ukrainian locale day/month arrays (`UA_DAYS`, `UA_MONTHS`), not `Intl`.
-- **Drag Logic**: Both modals draggable via header (except button areas). Converts CSS `transform` to pixel coords to avoid accumulation.
+- Everything runs in one IIFE in `GetEvents.user.js` and initializes by calling `createUI()`.
+- `createUI()` injects a fixed top panel with date range controls and two entry points:
+  - `Settings` button -> settings modal
+  - `Get schedule` button -> events modal and fetch pipeline
+- Settings flow:
+  - `createSettingsUIHtml()` renders markup only
+  - `attachSettingsHandlers()` wires behavior after injection
+  - `SettingsManager` persists values using Tampermonkey storage (`GM_getValue`/`GM_setValue`)
+- Event flow:
+  - `onFetch()` reads date inputs and opens a loading events modal
+  - `fetchAllEvents()` paginates `/api/v2/events.json` using selected tags
+  - `fetchAgenda()` fetches agenda per non-small event in parallel
+  - `renderEvents()` chooses grouped vs ungrouped rendering and writes HTML to the events modal
+- Modal subsystem:
+  - `showModal(html, type)` handles modal creation, mode-specific header/buttons, drag behavior, and backdrop behavior
+  - `updateModalContent()` updates content without rebuilding when modal type is unchanged
 
 ## Key Conventions
 
-### Modal System
-- **Type Tracking**: Each modal stores `data-modal-type` attribute ('settings' or 'events')
-- **Smart Recreation**: 
-  - Different type: Close old modal, recreate with new buttons/header
-  - Same type: Update content only (preserves drag listeners)
-- **Drag Implementation**:
-  - Header has `cursor: 'move'` and `userSelect: 'none'`
-  - Mousedown listener prevents drag on button targets
-  - Fresh listeners for each modal instance (garbage collected when modal removed)
-- **Button Logic**:
-  - Close button: Always present
-  - Copy button: Only for 'events' type
-  - Buttons prevent drag when clicked: `if (e.target === closeBtn || (type === 'events' && e.target === copyBtn)) return;`
+### API and data handling
+- Use `gmGet(url)` for all network calls (Promise wrapper over `GM_xmlhttpRequest`).
+- Tag search endpoint returns a plain array of strings, not an object.
+- Event list pagination is controlled by API `limit`/`total` and `start` offsets.
+- Talks are filtered to `is_speech` and bounded by selected date range.
 
-### Settings Manager (Reusable Pattern)
-```js
-SettingsManager.getTags()      // Returns saved tags or defaults
-SettingsManager.setTags(array) // Persist tag selection
-SettingsManager.reset()        // Revert to defaults
-```
-- Storage key: `'tm_selected_tags'` (JSON array)
-- Default: `['AI', 'Artificial intelligence']`
-- Ready for expansion: locations, languages, etc.
+### Rendering conventions
+- Locale/date text uses hard-coded Ukrainian arrays (`UA_DAYS`, `UA_MONTHS`) and helper formatters; do not switch to `Intl`.
+- Escape user/API-provided text with `escHtml()` before interpolation into HTML strings.
+- Rendering is split by event type:
+  - `renderSingle` for `size === 's'`
+  - `renderTalk` / `renderSeriesGroup` for series agenda items
+- Grouping behavior is user-configurable via `SettingsManager.getGroupSeries()`.
 
-### Tag Search
-- API endpoint: `https://wearecommunity.io/api/v2/dictionaries/skills/search`
-- Response format: Direct array of strings (not nested object)
-- Dropdown populates with checkboxes from response array
+### Modal and UI behavior
+- Modal type is tracked through `data-modal-type` (`settings` or `events`).
+- If modal type changes, recreate modal; if type stays the same, update only content.
+- Drag starts only from header non-button area; drag logic converts initial transform-based position to pixel `left/top`.
+- Backdrop closes modal only when both mousedown and mouseup occur on backdrop (prevents accidental close during text selection).
+- Copy button exists only in `events` modal and copies both `text/html` and `text/plain`.
 
-### Settings UI Generation
-```js
-createSettingsUIHtml()  // Returns HTML string (no listeners)
-attachSettingsHandlers() // Attaches listeners after HTML injected (ensures functionality)
-showModal(html, 'settings') // Opens modal with correct type/buttons
-```
-
-### Event Fetching
-- `fetchAllEvents(from, till)` uses `SettingsManager.getTags()` for tag filtering
-- Constructs dynamic tag parameters: `&tag%5B%5D=TagName`
-- Paginates through API results
-
-### Date/Locale
-- Use hard-coded Ukrainian day/month arrays (`UA_DAYS`, `UA_MONTHS`)
-- Format: `fmtDate(timestamp)` → "Понеділок, 24 травня 2026"
-
-### Code Style
-- No external dependencies, vanilla JS/CSS only
-- All styles via `Object.assign(element.style, {...})` or inline
-- No build system or package manager
-
-## Testing & Maintenance
-- **Manual testing**: Via Tampermonkey in browser at https://wearecommunity.io/events
-- **Syntax check**: `node -c GetEvents.user.js`
-- **UI/UX review**: Use `ui-ux-designer` Claude agent for modal dialogs, drag, micro-UI feedback
-- **Reference**: `initial-prompt.txt` contains original Ukrainian spec and sample API responses
-
-## AI Assistant Configs
-- **Claude**: See `CLAUDE.md` for detailed project/architecture notes and conventions.
-- **UI/UX agent**: `.claude/agents/ui-ux-designer.md` describes the UI/UX review workflow and constraints.
-
----
-
-This file summarizes the architecture, workflow, and conventions for Copilot and other AI assistants. If you want to adjust these instructions or add coverage for other areas, let me know!
+### Project constraints and assistant context
+- No package manager or framework; keep changes in vanilla JS/CSS inside `GetEvents.user.js`.
+- Styling is done via `Object.assign(element.style, ...)` and `GM_addStyle`.
+- Relevant assistant configs to align with:
+  - `README.md` (installation/usage expectations)
+  - `CLAUDE.md` (architecture and flow details)
+  - `.claude/agents/ui-ux-designer.md` (UI/UX review expectations for modals and interactions)
