@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.19
+// @version      0.0.20
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -91,23 +91,88 @@ function createUI() {
         transform: 'translateX(-50%)',
         zIndex: '99999',
         background: '#fff',
-        padding: '7px 14px',
-        border: '1px solid #555',
+        padding: '12px 16px',
+        border: '1px solid #ddd',
         borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        gap: '12px',
         fontFamily: 'sans-serif',
         fontSize: '13px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.25)',
-        whiteSpace: 'nowrap',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
     });
 
-    panel.innerHTML =
-        `<label>Від: <input id="tm-from" type="date" value="${toInputDate(today)}"></label>` +
-        `<label>До:&nbsp; <input id="tm-till" type="date" value="${toInputDate(weekLater)}"></label>` +
-        `<button id="tm-btn" style="padding:4px 12px;cursor:pointer;font-weight:bold;">Get schedule</button>` +
-        `<button id="tm-settings-btn" style="padding:4px 12px;cursor:pointer;font-weight:bold;">⚙ Settings</button>`;
+    const dateGroup = document.createElement('div');
+    Object.assign(dateGroup.style, {
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        paddingRight: '12px',
+        borderRight: '1px solid #e0e0e0',
+    });
+
+    const fromLabel = document.createElement('label');
+    Object.assign(fromLabel.style, { display: 'flex', alignItems: 'center', gap: '4px', color: '#666' });
+    fromLabel.innerHTML = `<span style="font-size:12px;font-weight:500;">Від:</span><input id="tm-from" type="date" value="${toInputDate(today)}" style="padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:12px;">`;
+    dateGroup.appendChild(fromLabel);
+
+    const tillLabel = document.createElement('label');
+    Object.assign(tillLabel.style, { display: 'flex', alignItems: 'center', gap: '4px', color: '#666' });
+    tillLabel.innerHTML = `<span style="font-size:12px;font-weight:500;">До:</span><input id="tm-till" type="date" value="${toInputDate(weekLater)}" style="padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:12px;">`;
+    dateGroup.appendChild(tillLabel);
+
+    panel.appendChild(dateGroup);
+
+    const btnGroup = document.createElement('div');
+    Object.assign(btnGroup.style, {
+        display: 'flex',
+        gap: '6px',
+        alignItems: 'center',
+    });
+
+    const getBtn = document.createElement('button');
+    getBtn.id = 'tm-btn';
+    getBtn.textContent = '▶ Get schedule';
+    Object.assign(getBtn.style, {
+        padding: '6px 16px',
+        cursor: 'pointer',
+        fontWeight: '600',
+        background: '#007bff',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '6px',
+        fontSize: '13px',
+        transition: 'background 0.2s',
+    });
+    getBtn.onmouseover = () => getBtn.style.background = '#0056cc';
+    getBtn.onmouseout = () => getBtn.style.background = '#007bff';
+
+    const settingsBtn = document.createElement('button');
+    settingsBtn.id = 'tm-settings-btn';
+    settingsBtn.textContent = '⚙ Settings';
+    Object.assign(settingsBtn.style, {
+        padding: '6px 12px',
+        cursor: 'pointer',
+        fontWeight: '500',
+        background: '#fff',
+        color: '#666',
+        border: '1px solid #ccc',
+        borderRadius: '6px',
+        fontSize: '13px',
+        transition: 'all 0.2s',
+    });
+    settingsBtn.onmouseover = () => {
+        settingsBtn.style.background = '#f5f5f5';
+        settingsBtn.style.borderColor = '#999';
+    };
+    settingsBtn.onmouseout = () => {
+        settingsBtn.style.background = '#fff';
+        settingsBtn.style.borderColor = '#ccc';
+    };
+
+    btnGroup.appendChild(getBtn);
+    btnGroup.appendChild(settingsBtn);
+    panel.appendChild(btnGroup);
 
     document.body.appendChild(panel);
     document.getElementById('tm-btn').addEventListener('click', onFetch);
@@ -166,7 +231,7 @@ async function showSettingsModal() {
 }
 
 function chipHtml(tags) {
-    return tags.map(t => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;padding:4px 12px;margin:4px 4px 4px 0;border-radius:12px;font-size:12px;">${escHtml(t)}<span style="margin-left:6px;cursor:pointer;font-weight:bold;" class="tm-chip-remove">×</span></span>`).join('');
+    return tags.map(t => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;padding:4px 12px;margin:4px 4px 4px 0;border-radius:12px;font-size:12px;">${escHtml(t)}</span>`).join('');
 }
 
 function createSettingsUIHtml() {
