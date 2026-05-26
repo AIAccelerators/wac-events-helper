@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.15
+// @version      0.0.16
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -163,7 +163,7 @@ function createSettingsUIHtml() {
             <span>Group series events</span>
         </label>
 
-        <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;margin-top:10px;">Save Tags</button>
+        <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;margin-top:10px;">Save</button>
         <button id="tm-settings-reset" style="padding:6px 12px;cursor:pointer;background:#6c757d;color:#fff;border:none;border-radius:4px;font-size:13px;margin-left:6px;margin-top:10px;">Reset to Defaults</button>
     `;
 }
@@ -353,33 +353,66 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
         return true;
     });
 
-    // Calculate sort key for each event: for series, use earliest filtered talk date; for singles, use start time
-    const sortKeys = filtered.map(e => {
-        if (e.size === 's') {
-            return e.time_stamp.start;
-        }
-        // For series events, find earliest filtered talk date
-        const agendaData = agendaMap[e.id];
-        const items = agendaData && agendaData.agenda && agendaData.agenda.items;
-        if (items) {
-            const filteredTalks = items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs);
-            if (filteredTalks.length > 0) {
-                return Math.min(...filteredTalks.map(t => t.date));
+    if (groupSeries) {
+        // Grouped mode: sort series/singles together by earliest date
+        const sortKeys = filtered.map(e => {
+            if (e.size === 's') {
+                return e.time_stamp.start;
             }
-        }
-        // If no future talks found, use series start (will likely not appear, but be safe)
-        return e.time_stamp.start;
-    });
+            const agendaData = agendaMap[e.id];
+            const items = agendaData && agendaData.agenda && agendaData.agenda.items;
+            if (items) {
+                const filteredTalks = items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs);
+                if (filteredTalks.length > 0) {
+                    return Math.min(...filteredTalks.map(t => t.date));
+                }
+            }
+            return e.time_stamp.start;
+        });
 
-    const indexed = filtered.map((e, i) => ({ event: e, sortKey: sortKeys[i] }));
-    indexed.sort((a, b) => {
-        if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
-        return a.event.title.localeCompare(b.event.title, 'uk');
-    });
+        const indexed = filtered.map((e, i) => ({ event: e, sortKey: sortKeys[i] }));
+        indexed.sort((a, b) => {
+            if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+            return a.event.title.localeCompare(b.event.title, 'uk');
+        });
 
-    return indexed
-        .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs, dateTillTs, groupSeries))
-        .join(divider);
+        return indexed
+            .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs, dateTillTs, true))
+            .join(divider);
+    } else {
+        // Ungrouped mode: flatten all talks and sort globally by date
+        const allItems = [];
+
+        filtered.forEach(e => {
+            if (e.size === 's') {
+                allItems.push({ type: 'single', event: e, sortDate: e.time_stamp.start, title: e.title });
+            } else {
+                const agendaData = agendaMap[e.id];
+                const items = agendaData && agendaData.agenda && agendaData.agenda.items;
+                if (items) {
+                    const talks = items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs);
+                    talks.forEach(talk => {
+                        allItems.push({ type: 'talk', event: e, talk: talk, sortDate: talk.date, title: talk.title });
+                    });
+                }
+            }
+        });
+
+        allItems.sort((a, b) => {
+            if (a.sortDate !== b.sortDate) return a.sortDate - b.sortDate;
+            return a.title.localeCompare(b.title, 'uk');
+        });
+
+        return allItems
+            .map(item => {
+                if (item.type === 'single') {
+                    return renderSingle(item.event);
+                } else {
+                    return renderTalk(item.event, item.talk);
+                }
+            })
+            .join(divider);
+    }
 }
 
 function renderSingle(event) {
@@ -392,6 +425,22 @@ function renderSingle(event) {
         `<div>${dateStr}, ${t1} - ${t2}</div>`,
         `<div>TALK: <a href="${link}" target="_blank">${escHtml(event.title)}</a></div>`,
         `<div>Мова: ${escHtml(getLang(event))}</div>`,
+        `</div>`,
+    ].join('\n');
+}
+
+function renderTalk(event, talk) {
+    const seriesLink = eventPageUrl(event);
+    const lang = escHtml(getLang(event));
+    const t1 = fmtTime(talk.date, ':');
+    const t2 = fmtTime(talk.date + talk.duration_min * 60, ':');
+    const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
+    return [
+        `<div>`,
+        `<div>${fmtDate(talk.date)}, ${t1} - ${t2}</div>`,
+        `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+        `<div>TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
+        `<div>Мова: ${lang}</div>`,
         `</div>`,
     ].join('\n');
 }
