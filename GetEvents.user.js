@@ -144,8 +144,8 @@ function createUI() {
         fontSize: '13px',
         transition: 'background 0.2s',
     });
-    getBtn.onmouseover = () => getBtn.style.background = '#0056cc';
-    getBtn.onmouseout = () => getBtn.style.background = '#007bff';
+    getBtn.onmouseover = () => { getBtn.style.background = '#0056cc'; };
+    getBtn.onmouseout = () => { getBtn.style.background = '#007bff'; };
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'tm-settings-btn';
