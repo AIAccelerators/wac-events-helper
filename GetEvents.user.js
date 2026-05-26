@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.17
+// @version      0.0.18
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -14,6 +14,24 @@
 
 (function () {
     'use strict';
+
+    // ─── Styles ──────────────────────────────────────────────────────────────
+    GM_addStyle(`
+        @keyframes tm-spin {
+            to { transform: rotate(360deg); }
+        }
+        .tm-spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid #ddd;
+            border-top-color: #0066cc;
+            border-radius: 50%;
+            animation: tm-spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+    `);
+
     createUI();
 })();
 
@@ -113,7 +131,7 @@ async function onFetch() {
 
     btn.disabled = true;
     btn.textContent = 'Loading…';
-    showModal('<p>Завантаження…</p>', 'events');
+    showModal('<p><span class="tm-spinner"></span>Завантаження…</p>', 'events');
 
     try {
         const events = await fetchAllEvents(dateFrom, dateTill);
@@ -345,7 +363,6 @@ function eventPageUrl(event) {
 
 function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
-    const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
     const groupSeries = SettingsManager.getGroupSeries();
 
     const filtered = events.filter(e => {
@@ -390,12 +407,12 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
         return items
             .map(item => {
                 if (item.type === 'single') {
-                    return renderSingle(item.event);
+                    return renderCard(renderSingle(item.event), false);
                 } else {
-                    return renderSeriesGroup(item.event, item.talks);
+                    return renderCard(renderSeriesGroup(item.event, item.talks), true);
                 }
             })
-            .join(divider);
+            .join('');
     } else {
         // Ungrouped mode: flatten all talks and sort globally by date
         const allItems = [];
@@ -423,13 +440,20 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
         return allItems
             .map(item => {
                 if (item.type === 'single') {
-                    return renderSingle(item.event);
+                    return renderCard(renderSingle(item.event), false);
                 } else {
-                    return renderTalk(item.event, item.talk);
+                    return renderCard(renderTalk(item.event, item.talk), false);
                 }
             })
-            .join(divider);
+            .join('');
     }
+}
+
+// ─── Card Wrapper ────────────────────────────────────────────────────────────
+
+function renderCard(innerHtml, isSeries) {
+    const borderStyle = isSeries ? 'border-left: 3px solid #0066cc;' : 'border-left: 3px solid transparent;';
+    return `<div style="${borderStyle}padding: 10px 14px;margin-bottom: 6px;border-radius: 6px;background: #f9f9f9;border: 1px solid #e8e8e8;border-left-width:3px;">${innerHtml}</div>`;
 }
 
 function renderSeriesGroup(event, talks) {
@@ -465,7 +489,7 @@ function renderSingle(event) {
     return [
         `<div>`,
         `<div>${dateStr}, ${t1} - ${t2}</div>`,
-        `<div>TALK: <a href="${link}" target="_blank">${escHtml(event.title)}</a></div>`,
+        `<div style="font-weight:600;margin-top:2px;"><a href="${link}" target="_blank">${escHtml(event.title)}</a></div>`,
         `<div>Мова: ${escHtml(getLang(event))}</div>`,
         `</div>`,
     ].join('\n');
@@ -481,7 +505,7 @@ function renderTalk(event, talk) {
         `<div>`,
         `<div>${fmtDate(talk.date)}, ${t1} - ${t2}</div>`,
         `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
-        `<div>TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
+        `<div style="font-weight:600;margin-top:2px;"><a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
         `<div>Мова: ${lang}</div>`,
         `</div>`,
     ].join('\n');
@@ -605,7 +629,7 @@ function showModal(html, type = 'events') {
     const content = document.createElement('div');
     content.id = 'tm-modal-content';
     Object.assign(content.style, {
-        padding: '12px 16px',
+        padding: '10px 12px',
         overflowY: 'auto',
         flexGrow: '1',
     });
