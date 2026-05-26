@@ -1,0 +1,22 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (if ever needed)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Local development
+.env.local
+.env.*.local
+
+# Claude Code
+.claude/
