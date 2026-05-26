@@ -413,7 +413,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                     return renderCard(renderSeriesGroup(item.event, item.talks), true);
                 }
             })
-            .join('');
+            .join('<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">');
     } else {
         // Ungrouped mode: flatten all talks and sort globally by date
         const allItems = [];
@@ -446,7 +446,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                     return renderCard(renderTalk(item.event, item.talk), false);
                 }
             })
-            .join('');
+            .join('<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">');
     }
 }
 
