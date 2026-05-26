@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.0.16
+// @version      0.0.17
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       You
 // @match        https://wearecommunity.io/events
@@ -354,30 +354,47 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     });
 
     if (groupSeries) {
-        // Grouped mode: sort series/singles together by earliest date
-        const sortKeys = filtered.map(e => {
+        // Grouped mode: group by (date, series), sort by date then series title
+        const items = [];
+
+        filtered.forEach(e => {
             if (e.size === 's') {
-                return e.time_stamp.start;
-            }
-            const agendaData = agendaMap[e.id];
-            const items = agendaData && agendaData.agenda && agendaData.agenda.items;
-            if (items) {
-                const filteredTalks = items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs);
-                if (filteredTalks.length > 0) {
-                    return Math.min(...filteredTalks.map(t => t.date));
+                items.push({ type: 'single', date: e.time_stamp.start, event: e });
+            } else {
+                const agendaData = agendaMap[e.id];
+                const talks = agendaData && agendaData.agenda && agendaData.agenda.items
+                    ? agendaData.agenda.items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs)
+                    : [];
+
+                if (talks.length > 0) {
+                    const talksByDate = {};
+                    talks.forEach(talk => {
+                        const dateKey = Math.floor(talk.date / 86400) * 86400;
+                        if (!talksByDate[dateKey]) talksByDate[dateKey] = [];
+                        talksByDate[dateKey].push(talk);
+                    });
+
+                    Object.entries(talksByDate).forEach(([dateKey, dateTalks]) => {
+                        dateTalks.sort((a, b) => a.date - b.date);
+                        items.push({ type: 'series-group', date: parseInt(dateKey), event: e, talks: dateTalks });
+                    });
                 }
             }
-            return e.time_stamp.start;
         });
 
-        const indexed = filtered.map((e, i) => ({ event: e, sortKey: sortKeys[i] }));
-        indexed.sort((a, b) => {
-            if (a.sortKey !== b.sortKey) return a.sortKey - b.sortKey;
+        items.sort((a, b) => {
+            if (a.date !== b.date) return a.date - b.date;
             return a.event.title.localeCompare(b.event.title, 'uk');
         });
 
-        return indexed
-            .map(({ event: e }) => e.size === 's' ? renderSingle(e) : renderSeries(e, agendaMap[e.id], dateFromTs, dateTillTs, true))
+        return items
+            .map(item => {
+                if (item.type === 'single') {
+                    return renderSingle(item.event);
+                } else {
+                    return renderSeriesGroup(item.event, item.talks);
+                }
+            })
             .join(divider);
     } else {
         // Ungrouped mode: flatten all talks and sort globally by date
@@ -415,6 +432,31 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     }
 }
 
+function renderSeriesGroup(event, talks) {
+    const seriesLink = eventPageUrl(event);
+    const lang = escHtml(getLang(event));
+
+    talks.sort((a, b) => a.date - b.date);
+
+    const lines = [
+        `<div>`,
+        `<div>${fmtDate(talks[0].date)}</div>`,
+        `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+    ];
+
+    talks.forEach(talk => {
+        const t1 = fmtTime(talk.date, ':');
+        const t2 = fmtTime(talk.date + talk.duration_min * 60, ':');
+        const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
+        lines.push(
+            `<div style="padding-left:16px"><b>•</b> ${t1} - ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`
+        );
+    });
+
+    lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
+    return lines.join('\n');
+}
+
 function renderSingle(event) {
     const dateStr = fmtDate(event.time_stamp.start);
     const t1 = fmtTime(event.time_stamp.start, ':');
@@ -445,84 +487,6 @@ function renderTalk(event, talk) {
     ].join('\n');
 }
 
-function renderSeries(event, agendaData, dateFromTs, dateTillTs, groupSeries = true) {
-    const seriesLink = eventPageUrl(event);
-    const lang = escHtml(getLang(event));
-    const divider = '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">';
-
-    const items = agendaData && agendaData.agenda && agendaData.agenda.items;
-    const speeches = items
-        ? items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs).sort((a, b) => a.date - b.date)
-        : [];
-
-    if (!speeches.length) {
-        return [
-            `<div>`,
-            `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
-            `<div>${fmtDate(event.time_stamp.start)} — ${fmtDate(event.time_stamp.end)}</div>`,
-            `<div>Мова: ${lang}</div>`,
-            `</div>`,
-        ].join('\n');
-    }
-
-    if (groupSeries) {
-        // Group all talks together under the series name
-        const uniqueDays = new Set(speeches.map(item => {
-            const d = tsDate(item.date);
-            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-        }));
-
-        if (uniqueDays.size === 1) {
-            // All talks on one day — grouped bullet list
-            const lines = [
-                `<div>`,
-                `<div>${fmtDate(speeches[0].date)}</div>`,
-                `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a>:</div>`,
-            ];
-            speeches.forEach(item => {
-                const t1 = fmtTime(item.date, ':');
-                const t2 = fmtTime(item.date + item.duration_min * 60, ':');
-                const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
-                lines.push(
-                    `<div style="padding-left:16px"><b>•</b> ${t1} \u2013 ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
-                );
-            });
-            lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
-            return lines.join('\n');
-        } else {
-            // Talks spread across days — grouped with series header followed by all talks
-            const lines = [
-                `<div>`,
-                `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
-            ];
-            speeches.forEach(item => {
-                const t1 = fmtTime(item.date, ':');
-                const t2 = fmtTime(item.date + item.duration_min * 60, ':');
-                const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
-                lines.push(
-                    `<div style="padding-left:16px"><b>•</b> ${fmtDate(item.date)}, ${t1} - ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`
-                );
-            });
-            lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
-            return lines.join('\n');
-        }
-    } else {
-        // Ungrouped mode: each talk as its own flat entry with series reference
-        return speeches.map(item => {
-            const t1 = fmtTime(item.date, ':');
-            const t2 = fmtTime(item.date + item.duration_min * 60, ':');
-            const talkUrl = `${eventPageUrl(event)}/talks/${item.id}`;
-            return [
-                `<div>`,
-                `<div>${fmtDate(item.date)}, ${t1} - ${t2}</div>`,
-                `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
-                `<div>TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(item.title)}</a></div>`,
-                `<div>Мова: ${lang}</div>`,
-                `</div>`,
-            ].join('\n');
-        }).join(divider);
-    }
-}
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
