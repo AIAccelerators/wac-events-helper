@@ -12,8 +12,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
-// @updateURL    https://github.com/oleksandrkovalenkoigm/wac-events-helper/raw/main/GetEvents.user.js
-// @downloadURL  https://github.com/oleksandrkovalenkoigm/wac-events-helper/raw/main/GetEvents.user.js
+// @updateURL    https://github.com/AIAccelerators/wac-events-helper/raw/main/GetEvents.user.js
+// @downloadURL  https://github.com/AIAccelerators/wac-events-helper/raw/main/GetEvents.user.js
 // @tag          utilities
 // ==/UserScript==
 
