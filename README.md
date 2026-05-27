@@ -26,6 +26,16 @@ This script runs on the WAC Events page and provides a convenient interface to:
    - ✅ **Allow User Scripts** — required to run userscripts
    - ✅ **Allow access to file URLs** — required if accessing local files
 
+## Update
+
+The script automatically checks for updates through Tampermonkey:
+
+- **Automatic checks** — Tampermonkey periodically checks the `@updateURL` for newer versions
+- **Manual update** — Right-click the Tampermonkey icon → **Find updates** to check immediately
+- **Apply update** — When a new version is found, Tampermonkey will prompt you to install it
+
+No manual reinstallation is needed — updates are handled entirely by Tampermonkey.
+
 ## Usage
 
 1. Navigate to [https://wearecommunity.io/events](https://wearecommunity.io/events)
