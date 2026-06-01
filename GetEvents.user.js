@@ -729,6 +729,7 @@ function attachSettingsHandlers() {
 
     updateDropdown('');
     updateSaveButtonState();
+    attachChipRemoveHandlers();
 }
 
 function gmGet(url) {
