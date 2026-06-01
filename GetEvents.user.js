@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.3.1
+// @version      0.3.2
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
 // @connect      wearecommunity.io/api/v2
@@ -549,6 +549,7 @@ function attachSettingsHandlers() {
 
     async function updateDropdown(query) {
         dropdown.innerHTML = '';
+        tagCheckboxes = {}; // fix: always clear mapping to avoid stale checkboxes
         let options = allOptions;
 
         if (query.trim()) {
@@ -628,6 +629,7 @@ function attachSettingsHandlers() {
         SettingsManager.setTags(selected);
         currentTags.length = 0;
         currentTags.push(...selected);
+        allOptions = [...selected]; // fix: ensure allOptions matches latest selection
         updateDropdown('');
         selectedList.innerHTML = chipHtml(selected);
 
@@ -655,7 +657,7 @@ function attachSettingsHandlers() {
         // Update in-memory currentTags
         currentTags.length = 0;
         currentTags.push(...SettingsManager.DEFAULT_TAGS);
-
+        allOptions = [...SettingsManager.DEFAULT_TAGS]; // fix: ensure allOptions matches defaults
         updateDropdown('');
         // Reset formats
         formatOnlineCheckbox.checked = true;
