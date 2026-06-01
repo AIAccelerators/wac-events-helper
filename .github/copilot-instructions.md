@@ -1,19 +1,23 @@
 # Copilot Instructions for This Repository
 
 ## Build, Test, and Lint Commands
-- No build, lint, or automated test suite is defined (single-file userscript project).
-- Syntax check:
-  - `node -c GetEvents.user.js`
-- Single-test command:
-  - Not applicable (no test runner or test files exist).
-- Manual verification flow:
-  1. Install/update by opening or dragging `GetEvents.user.js` into Tampermonkey.
+- Install dev tooling once (if needed): `npm install`
+- Lint: `npx eslint GetEvents.user.js`
+- Syntax check: `node -c GetEvents.user.js`
+- Single-test command: Not applicable (no automated test runner or test files in this repo).
+- Manual verification (primary validation path):
+  1. Install/update the script in Tampermonkey from `GetEvents.user.js`.
   2. Open `https://wearecommunity.io/events`.
-  3. Validate both flows: `Settings` (tag search/save/reset, group-series toggle) and `Get schedule` (fetch + modal render + copy).
-- For releases, bump `@version` in the userscript header.
+  3. Verify both flows: `Settings` (tag search, save/reset, grouping toggle) and `Get schedule` (fetch, modal render, copy).
+- Release step: bump `@version` in the userscript header.
 
 ## High-Level Architecture
-- Everything runs in one IIFE in `GetEvents.user.js` and initializes by calling `createUI()`.
+- Runtime is a single-file Tampermonkey userscript (`GetEvents.user.js`) initialized from an IIFE that applies styles and calls `createUI()`.
+- Code organization inside the file is intentional:
+  - global constants + helpers first (`COLORS`, `SPACING`, `BORDER_RADIUS`, `TIME_CONSTANTS`, utility format/parse helpers)
+  - `SettingsManager` storage abstraction
+  - UI/fetch/render/modal functions
+  Keep business logic outside the IIFE; use the IIFE only for bootstrap.
 - `createUI()` injects a fixed top panel with date range controls and two entry points:
   - `Settings` button -> settings modal
   - `Get schedule` button -> events modal and fetch pipeline
@@ -45,6 +49,7 @@
   - `renderSingle` for `size === 's'`
   - `renderTalk` / `renderSeriesGroup` for series agenda items
 - Grouping behavior is user-configurable via `SettingsManager.getGroupSeries()`.
+- Styling uses `GM_addStyle` plus `Object.assign(element.style, ...)` and shared tokens (`COLORS`, `SPACING`, `BORDER_RADIUS`) rather than ad hoc inline literals.
 
 ### Modal and UI behavior
 - Modal type is tracked through `data-modal-type` (`settings` or `events`).
@@ -54,9 +59,9 @@
 - Copy button exists only in `events` modal and copies both `text/html` and `text/plain`.
 
 ### Project constraints and assistant context
-- No package manager or framework; keep changes in vanilla JS/CSS inside `GetEvents.user.js`.
+- Keep implementation in vanilla JS/CSS within `GetEvents.user.js` (no framework/runtime build).
 - Styling is done via `Object.assign(element.style, ...)` and `GM_addStyle`.
 - Relevant assistant configs to align with:
   - `README.md` (installation/usage expectations)
   - `CLAUDE.md` (architecture and flow details)
-  - `.claude/agents/ui-ux-designer.md` (UI/UX review expectations for modals and interactions)
+  - `AGENTS.md` (scope rules, lint/syntax/manual validation workflow)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.3.0
+// @version      0.4.0
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
 // @connect      wearecommunity.io/api/v2
@@ -524,8 +524,9 @@ function createSettingsUIHtml() {
         ${checkboxLabel('Офлайн зі стрімом', 'tm-format-offline-stream', currentFormats.includes('Офлайн зі стрімом'))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
-            <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;">Save</button>
-            <button id="tm-settings-reset" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;">Reset</button>
+<button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Save your selected tags and formats">Save</button>
+<button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">Defaults</button>
+<button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">Unselect All</button>
         </div>
     `;
 }
@@ -536,11 +537,12 @@ function attachSettingsHandlers() {
     const dropdown = document.getElementById('tm-settings-dropdown');
     const selectedList = document.getElementById('tm-settings-selected');
     const saveBtn = document.getElementById('tm-settings-save');
-    const resetBtn = document.getElementById('tm-settings-reset');
+    const defaultsBtn = document.getElementById('tm-settings-defaults');
+    const unselectAllBtn = document.getElementById('tm-settings-unselect-all');
     const formatOnlineCheckbox = document.getElementById('tm-format-online');
     const formatOfflineStreamCheckbox = document.getElementById('tm-format-offline-stream');
 
-    if (!searchInput || !dropdown || !saveBtn || !resetBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
+    if (!searchInput || !dropdown || !saveBtn || !defaultsBtn || !unselectAllBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
 
     const tagCheckboxes = {};
     let allOptions = [...currentTags];
@@ -580,6 +582,9 @@ function attachSettingsHandlers() {
             checkbox.checked = currentTags.includes(tag);
             tagCheckboxes[tag] = checkbox;
 
+            // Update save button state on any change
+            checkbox.addEventListener('change', updateSaveButtonState);
+
             const span = document.createElement('span');
             span.textContent = escHtml(tag);
             Object.assign(span.style, { marginLeft: SPACING.LG });
@@ -588,41 +593,106 @@ function attachSettingsHandlers() {
             label.appendChild(span);
             dropdown.appendChild(label);
         });
+        updateSaveButtonState();
     }
 
     searchInput.addEventListener('input', e => updateDropdown(e.target.value));
+
+    function updateSaveButtonState() {
+        const selectedTags = Object.values(tagCheckboxes).filter(cb => cb.checked).length;
+        const isValid = selectedTags > 0;
+
+        if (isValid) {
+            saveBtn.disabled = false;
+            saveBtn.title = 'Save your selected tags and formats';
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+        } else {
+            saveBtn.disabled = true;
+            saveBtn.title = 'Please select at least 1 tag';
+            saveBtn.style.opacity = '0.5';
+            saveBtn.style.cursor = 'not-allowed';
+        }
+    }
 
     saveBtn.onclick = () => {
         const selected = Object.entries(tagCheckboxes)
             .filter(([_, cb]) => cb.checked)
             .map(([tag, _]) => tag);
-        if (selected.length > 0) {
-            SettingsManager.setTags(selected);
-            currentTags.length = 0;
-            currentTags.push(...selected);
-            updateDropdown('');
-            selectedList.innerHTML = chipHtml(selected);
+        // Only allow save if at least one tag
+        if (selected.length === 0) {
+            return;
         }
+
+        // Save tags to storage
+        SettingsManager.setTags(selected);
+        currentTags.length = 0;
+        currentTags.push(...selected);
+        updateDropdown('');
+        selectedList.innerHTML = chipHtml(selected);
 
         // Save format selections
         const selectedFormats = [];
         if (formatOnlineCheckbox.checked) selectedFormats.push('Тільки онлайн');
         if (formatOfflineStreamCheckbox.checked) selectedFormats.push('Офлайн зі стрімом');
         SettingsManager.setFormats(selectedFormats);
+
+        // Show feedback
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = '✓ Saved';
+        saveBtn.style.background = COLORS.DARK_BLUE;
+        setTimeout(() => {
+            saveBtn.textContent = originalText;
+            saveBtn.style.background = COLORS.PRIMARY_BLUE;
+        }, 1500);
     };
 
-    resetBtn.onclick = () => {
-        SettingsManager.reset();
+    defaultsBtn.onclick = () => {
+        // Save defaults to storage immediately
+        SettingsManager.setTags(SettingsManager.DEFAULT_TAGS);
+        SettingsManager.setFormats(SettingsManager.DEFAULT_FORMATS);
+
+        // Update in-memory currentTags
         currentTags.length = 0;
         currentTags.push(...SettingsManager.DEFAULT_TAGS);
+
         updateDropdown('');
-        selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
-        // Reset format checkboxes to default
+        // Reset formats
         formatOnlineCheckbox.checked = true;
         formatOfflineStreamCheckbox.checked = true;
+        selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
+        // Confirmation feedback
+        const originalText = defaultsBtn.textContent;
+        defaultsBtn.textContent = '✓ Defaults Loaded';
+        defaultsBtn.style.background = COLORS.LIGHT_BLUE;
+        defaultsBtn.style.color = COLORS.DARK_TEXT_BLUE;
+        setTimeout(() => {
+            defaultsBtn.textContent = originalText;
+            defaultsBtn.style.background = COLORS.WHITE;
+            defaultsBtn.style.color = COLORS.TEXT_GRAY;
+        }, 1500);
+    };
+
+    unselectAllBtn.onclick = () => {
+        Object.values(tagCheckboxes).forEach(cb => cb.checked = false);
+        formatOnlineCheckbox.checked = false;
+        formatOfflineStreamCheckbox.checked = false;
+        selectedList.innerHTML = '';
+        updateSaveButtonState();
+        // Confirmation feedback
+        const originalText = unselectAllBtn.textContent;
+        unselectAllBtn.textContent = '✓ Cleared';
+        unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
+        unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
+        setTimeout(() => {
+            unselectAllBtn.textContent = originalText;
+            unselectAllBtn.style.background = COLORS.WHITE;
+            unselectAllBtn.style.color = COLORS.TEXT_GRAY;
+        }, 1500);
     };
 
     updateDropdown('');
+    updateSaveButtonState();
 }
 
 function gmGet(url) {
@@ -726,7 +796,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
         return true;
     });
 
-    // Ungrouped mode: flatten all talks and sort globally by date
+    // Flatten all single events and talks for grouping
     const allItems = [];
 
     filtered.forEach(e => {
@@ -744,21 +814,71 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
         }
     });
 
+    // Group by (date, series id)
     allItems.sort((a, b) => {
         if (a.sortDate !== b.sortDate) return a.sortDate - b.sortDate;
         return a.title.localeCompare(b.title, 'uk');
     });
 
-    return allItems
-        .map(item => {
-            if (item.type === 'single') {
-                return renderCard(renderSingle(item.event), false);
+    // Map: key = type=single then 'single_'+date, otherwise 'series_'+event.id+'_'+yyyymmdd
+    function getDateKey(ts) {
+        const d = tsDate(ts);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    const grouped = {};
+    const singles = [];
+
+    allItems.forEach(item => {
+        if (item.type === 'single') {
+            singles.push(item); // single day event, not a series
+        } else {
+            // group by series id and date
+            const groupKey = item.event.id + '::' + getDateKey(item.talk.date);
+            if (!grouped[groupKey]) grouped[groupKey] = { event: item.event, talks: [] };
+            grouped[groupKey].talks.push(item.talk);
+        }
+    });
+
+    // Merge all, sorted order
+    const mergedBlocks = [];
+
+    // singles sorted in
+    singles.forEach(item => {
+        mergedBlocks.push({ type: 'single', event: item.event });
+    });
+    // Flatten groups, order by min date
+    Object.values(grouped)
+        .sort((g1, g2) => g1.talks[0].date - g2.talks[0].date)
+        .forEach(group => {
+            if (group.talks.length === 1) {
+                // Render as single talk (series, but only one on this date)
+                mergedBlocks.push({ type: 'singleTalk', event: group.event, talk: group.talks[0] });
             } else {
-                return renderCard(renderTalk(item.event, item.talk), false);
+                // Render as series group
+                mergedBlocks.push({ type: 'seriesGroup', event: group.event, talks: group.talks });
+            }
+        });
+
+    // Sort all mergedBlocks by their primary timestamp for correct order.
+    mergedBlocks.sort((a, b) => {
+        const aTs = a.type === 'single' ? a.event.time_stamp.start : a.type === 'singleTalk' ? a.talk.date : a.talks[0].date;
+        const bTs = b.type === 'single' ? b.event.time_stamp.start : b.type === 'singleTalk' ? b.talk.date : b.talks[0].date;
+        return aTs - bTs;
+    });
+
+    return mergedBlocks
+        .map(block => {
+            if (block.type === 'single') {
+                return renderCard(renderSingle(block.event), false);
+            } else if (block.type === 'singleTalk') {
+                return renderCard(renderTalk(block.event, block.talk), false);
+            } else {
+                return renderCard(renderSeriesGroup(block.event, block.talks), true);
             }
         })
         .join(`<hr style="border:none;border-top:1px solid ${COLORS.LIGHT_BORDER};margin:10px 0">`);
 }
+
 
 // ─── Card Wrapper ────────────────────────────────────────────────────────────
 
@@ -766,12 +886,8 @@ function renderCard(innerHtml, isSeries) {
     return `<div style="border-left: 3px solid transparent;padding: 10px 14px;margin-bottom: 6px;border-radius: ${BORDER_RADIUS.MEDIUM};background: ${COLORS.OFF_WHITE};border: 1px solid ${COLORS.MEDIUM_GRAY};border-left-width:3px;">${innerHtml}</div>`;
 }
 
-// TODO: Leftovers, Remove later
-/* eslint-disable-next-line no-unused-vars */
 function renderSeriesGroup(event, talks) {
     const seriesLink = eventPageUrl(event);
-    const lang = escHtml(getLang(event));
-
     talks.sort((a, b) => a.date - b.date);
 
     const lines = [
@@ -783,12 +899,13 @@ function renderSeriesGroup(event, talks) {
     talks.forEach(talk => {
         const timeRange = formatTimeRange(talk.date, talk.date + talk.duration_min * 60);
         const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
+        const talkLang = escHtml(talk.short_language || getLang(event));
         lines.push(
-            `<div style="padding-left:16px"><b>•</b> ${timeRange}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`
+            `<div style="padding-left:16px"><b>•</b> ${timeRange}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a> | ${talkLang}</div>`
         );
     });
 
-    lines.push(`<div>Мова: ${lang}</div>`, `</div>`);
+    lines.push(`</div>`);
     return lines.join('\n');
 }
 
@@ -808,7 +925,7 @@ function renderSingle(event) {
 
 function renderTalk(event, talk) {
     const seriesLink = eventPageUrl(event);
-    const lang = escHtml(getLang(event));
+    const lang = escHtml(talk.short_language || getLang(event));
     const timeRange = formatTimeRange(talk.date, talk.date + talk.duration_min * 60);
     const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
     return [

@@ -1,0 +1,201 @@
+================================================================================
+        GETEVENTS.USER.JS - CODE DUPLICATION ANALYSIS SUMMARY
+================================================================================
+
+ANALYSIS COMPLETED: 2026-05-29
+TOTAL DUPLICATIONS IDENTIFIED: 62 patterns across 8 categories
+DUPLICATED CODE SEGMENTS: 89+ instances
+
+================================================================================
+SEVERITY BREAKDOWN
+================================================================================
+
+HIGH SEVERITY (3+ occurrences):    16 patterns
+MEDIUM SEVERITY (2 occurrences):   30 patterns  
+LOW SEVERITY (1 or contextual):    16 patterns
+
+================================================================================
+TOP PRIORITY DUPLICATIONS
+================================================================================
+
+1. CSS COLOR CONSTANTS (HIGH) - 16+ repeated colors
+   - #ccc, #ddd, #e8e8e8, #007bff, #0066cc, #999, #666, #fff, etc.
+   - Instances: 40+ occurrences across CSS and inline styles
+   - Impact: Very High (hard to maintain, inconsistent styling)
+   - Fix: Extract to color palette constants at top of file
+
+2. INPUT/BUTTON STYLING (HIGH) - 15+ duplications
+   - border-radius: 4px (8+ times)
+   - padding: 6px {X}px (4+ times)
+   - border: 1px solid {color} (9+ times)
+   - font-size: 12px/13px (9+ times)
+   - Impact: Very High (maintenance nightmare)
+   - Fix: Create CSS classes or style constants
+
+3. SETTINGS HEADER HTML TEMPLATE (HIGH) - 3 exact copies
+   - Lines: 400, 405, 411
+   - Pattern: <h4> with identical styling, only text differs
+   - Impact: High (maintenance burden)
+   - Fix: Create header template function
+
+4. CHECKBOX + LABEL PATTERN (HIGH) - 3 exact copies
+   - Lines: 407, 413, 417
+   - Pattern: <label> with checkbox, identical structure
+   - Margin-bottom differs (8px vs 16px)
+   - Impact: High (hard to update all 3)
+   - Fix: Create checkbox label helper function
+
+5. DATE RANGE FILTER (HIGH) - 2 exact copies
+   - Lines: 642, 686
+   - Pattern: .filter(i => i.is_speech && i.date >= dateFromTs && i.date <= dateTillTs + 86400)
+   - Impact: High (bug fixes must be applied twice)
+   - Fix: Extract to helper function
+
+6. URL PARAMETER MAPPING (MEDIUM) - 2 copies
+   - Lines: 550, 556
+   - Pattern: tags.map(t => `&key%5B%5D=${encodeURIComponent(t)}`).join('')
+   - Impact: Medium
+   - Fix: Create querystring builder helper
+
+7. JSON PARSE WITH FALLBACK (MEDIUM) - 2 copies
+   - Lines: 190-195, 215-220
+   - Pattern: try { JSON.parse + validation } catch { return DEFAULT }
+   - Impact: Medium
+   - Fix: Create generic parser helper
+
+8. TIME CALCULATION (MEDIUM) - 2 copies
+   - Lines: 732, 761
+   - Pattern: const t1 = fmtTime(x.date, ':'); const t2 = fmtTime(x.date + x.duration * 60, ':');
+   - Impact: Medium
+   - Fix: Create formatTimeRange() helper
+
+9. EVENT PAGE URL RENDERING (MEDIUM) - 2 exact copies
+   - Lines: 727, 766
+   - Pattern: <div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}"...
+   - Impact: Medium
+   - Fix: Create seriesEventLink template
+
+10. DATE INPUT TEMPLATES (MEDIUM) - 2 copies
+    - Lines: 272, 277
+    - Pattern: <span>{label}</span><input type="date" .../>
+    - Impact: Medium
+    - Fix: Create createDateInput() helper
+
+================================================================================
+DETAILED BREAKDOWN BY CATEGORY
+================================================================================
+
+CSS/STYLING DUPLICATIONS (15 patterns):
+  HIGH:   6 patterns (colors, padding, border-radius, sizing)
+  MEDIUM: 6 patterns (spacing, borders, hover states)
+  LOW:    3 patterns (edge cases, border-radius variants)
+  Impact: VERY HIGH - ~40 color/size duplication points
+
+HTML TEMPLATE DUPLICATIONS (11 patterns):
+  HIGH:   4 patterns (settings headers, checkbox labels, event links)
+  MEDIUM: 5 patterns (button pairs, date inputs, time ranges)
+  LOW:    2 patterns (container divs, text content)
+  Impact: HIGH - Settings UI especially problematic
+
+EVENT LISTENER PATTERNS (4 patterns):
+  MEDIUM: 3 patterns (.onclick assignments, document listeners)
+  LOW:    1 pattern (specialized backdrop logic)
+  Impact: MEDIUM - Could standardize .onclick usage
+
+LABEL/INPUT PATTERNS (3 patterns):
+  HIGH:   1 pattern (checkbox labels - 3 copies)
+  MEDIUM: 1 pattern (date inputs - 2 copies)
+  LOW:    1 pattern (dynamic dropdown creation)
+  Impact: MEDIUM - Settings UI maintenance
+
+FILTER/MAP LOGIC (7 patterns):
+  HIGH:   1 pattern (date range filter - 2 exact copies)
+  MEDIUM: 4 patterns (URL encoding, JSON parsing, item removal)
+  LOW:    2 patterns (sorting, checkbox filtering)
+  Impact: HIGH - Bug propagation risk
+
+COLOR/CONSTANTS (12 patterns):
+  HIGH:   2 patterns (#0066cc, hardcoded storage keys)
+  MEDIUM: 6 patterns (color palette, magic numbers)
+  LOW:    4 patterns (accent colors)
+  Impact: VERY HIGH - No color constants defined!
+
+DOM ELEMENT CREATION (4 patterns):
+  HIGH:   1 pattern (createElement + Object.assign repeated)
+  MEDIUM: 2 patterns (appendChild chains, modal creation)
+  LOW:    1 pattern (specialized elements)
+  Impact: MEDIUM - Standard practice but repetitive
+
+ERROR HANDLING (6 patterns):
+  HIGH:   1 pattern (ignore errors with underscore - 3 copies)
+  MEDIUM: 3 patterns (error variable naming, JSON parse, promise rejection)
+  LOW:    2 patterns (inconsistent error handling)
+  Impact: MEDIUM - Inconsistent conventions
+
+================================================================================
+RECOMMENDATIONS (Priority Order)
+================================================================================
+
+PHASE 1 - CRITICAL (Fixes 30+ duplications):
+  [ ] Extract color palette to constants object at top
+  [ ] Create CSS classes for common button/input styles
+  [ ] Extract settings header HTML template
+  [ ] Extract date filter predicate to helper function
+  → Estimated: 2-3 hours, high ROI
+
+PHASE 2 - HIGH PRIORITY (Fixes 20+ duplications):
+  [ ] Create checkbox label template function
+  [ ] Create date input helper
+  [ ] Create time formatting helper (fmtDateRange)
+  [ ] Extract URL parameter mapper
+  [ ] Consolidate error handling patterns
+  → Estimated: 2-3 hours
+
+PHASE 3 - MEDIUM PRIORITY (Fixes 15+ duplications):
+  [ ] Audit all escHtml() calls for consistency
+  [ ] Extract magic numbers (86400, 1000) to constants
+  [ ] Create rendering template generator
+  [ ] Standardize event listener patterns
+  → Estimated: 2 hours
+
+PHASE 4 - LOW PRIORITY (Cleanup):
+  [ ] Review locale-aware sorting patterns
+  [ ] Audit horizontal rule usage
+  [ ] Text color consistency review
+  → Estimated: 1 hour
+
+================================================================================
+IMPACT SUMMARY
+================================================================================
+
+Lines of Code Analyzed:     945
+Duplicated Patterns Found:  62
+Total Duplicate Instances:  89+
+Estimated Lines to Remove:  150-200 (16-21% of file)
+Estimated Refactor Time:    6-8 hours
+Risk Level:                 LOW (mostly cosmetic changes)
+Maintainability Improvement: HIGH (30-40% reduction in duplication)
+
+CRITICAL ISSUES:
+  ✓ No color palette constants → inconsistent styling
+  ✓ HTML templates hardcoded in 3+ places → maintenance nightmare
+  ✓ Filter predicates duplicated → bug propagation risk
+  ✓ Style objects repeated → hard to update consistently
+
+================================================================================
+FILES GENERATED
+================================================================================
+
+1. duplication-analysis.md (291 lines)
+   - Comprehensive analysis with code examples
+   - Grouped by category with severity levels
+   - Detailed recommendations
+   - Located: .codemie/duplication-analysis.md
+
+2. duplication-summary.txt (this file)
+   - Executive summary
+   - Priority recommendations
+   - Quick reference guide
+   - Located: .codemie/duplication-summary.txt
+
+================================================================================
