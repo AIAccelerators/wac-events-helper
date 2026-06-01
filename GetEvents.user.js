@@ -505,7 +505,7 @@ async function showSettingsModal() {
 }
 
 function chipHtml(tags) {
-    return tags.map(t => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;padding:4px 12px;margin:4px 4px 4px 0;border-radius:12px;font-size:12px;">${escHtml(t)}</span>`).join('');
+    return tags.map(t => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;padding:4px 12px;margin:4px 4px 4px 0;border-radius:12px;font-size:12px;position:relative;padding-right:20px;" data-tag="${escHtml(t)}"><span>${escHtml(t)}</span><button class="chip-remove-btn" style="position:absolute;right:2px;top:0;bottom:0;width:18px;background:none;border:none;color:#1a56db;cursor:pointer;font-size:16px;font-weight:bold;padding:0;line-height:1;" title="Remove this tag">×</button></span>`).join('');
 }
 
 function createSettingsUIHtml() {
@@ -558,8 +558,9 @@ function attachSettingsHandlers() {
                     `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
                 );
                 if (Array.isArray(results)) {
-                    options = results;
-                    allOptions = [...new Set([...allOptions, ...options])];
+                    // Merge search results with current selections to avoid losing defaults
+                    options = [...new Set([...allOptions, ...results])];
+                    allOptions = options;
                 }
             } catch (err) {
                 console.error('Tag search failed:', err);
@@ -624,6 +625,29 @@ function attachSettingsHandlers() {
             .filter(([_, cb]) => cb.checked)
             .map(([tag, _]) => tag);
         selectedList.innerHTML = chipHtml(checkedTags);
+        attachChipRemoveHandlers();
+    }
+
+    function attachChipRemoveHandlers() {
+        const removeButtons = document.querySelectorAll('.chip-remove-btn');
+        removeButtons.forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const chip = btn.parentElement;
+                const tagName = chip.getAttribute('data-tag');
+
+                // Uncheck the checkbox if it exists in tagCheckboxes
+                if (tagCheckboxes[tagName]) {
+                    tagCheckboxes[tagName].checked = false;
+                }
+
+                // Update both chips and button state
+                updateSelectedChips();
+                updateSaveButtonState();
+            };
+        });
     }
 
     saveBtn.onclick = () => {
