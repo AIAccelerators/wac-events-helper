@@ -583,8 +583,11 @@ function attachSettingsHandlers() {
             checkbox.checked = currentTags.includes(tag);
             tagCheckboxes[tag] = checkbox;
 
-            // Update save button state on any change
-            checkbox.addEventListener('change', updateSaveButtonState);
+            // Update save button state and chips on any change
+            checkbox.addEventListener('change', () => {
+                updateSaveButtonState();
+                updateSelectedChips();
+            });
 
             const span = document.createElement('span');
             span.textContent = escHtml(tag);
@@ -614,6 +617,13 @@ function attachSettingsHandlers() {
             saveBtn.style.opacity = '0.5';
             saveBtn.style.cursor = 'not-allowed';
         }
+    }
+
+    function updateSelectedChips() {
+        const checkedTags = Object.entries(tagCheckboxes)
+            .filter(([_, cb]) => cb.checked)
+            .map(([tag, _]) => tag);
+        selectedList.innerHTML = chipHtml(checkedTags);
     }
 
     saveBtn.onclick = () => {
