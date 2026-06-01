@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.3.0
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
 // @connect      wearecommunity.io/api/v2
@@ -17,6 +17,101 @@
 // @tag          utilities
 // ==/UserScript==
 
+// ─── Constants (Global Scope) ────────────────────────────────────────────────
+
+const COLORS = {
+    PRIMARY_BLUE: '#007bff',
+    DARK_BLUE: '#0056cc',
+    LINK_BLUE: '#0066cc',
+    LIGHT_BLUE: '#e8f0fe',
+    DARK_TEXT_BLUE: '#1a56db',
+    WHITE: '#fff',
+    OFF_WHITE: '#f9f9f9',
+    LIGHT_GRAY: '#f5f5f5',
+    MEDIUM_GRAY: '#e8e8e8',
+    DARK_GRAY: '#999',
+    TEXT_GRAY: '#666',
+    BORDER_GRAY: '#e0e0e0',
+    INPUT_BORDER: '#ccc',
+    LIGHT_BORDER: '#ddd',
+    VERY_LIGHT_BORDER: '#eee',
+    ERROR_RED: 'red',
+};
+
+const SPACING = {
+    XS: '2px',
+    SM: '4px',
+    MD: '6px',
+    LG: '8px',
+    XL: '12px',
+    XXL: '16px',
+};
+
+const BORDER_RADIUS = {
+    SMALL: '4px',
+    MEDIUM: '6px',
+    LARGE: '8px',
+};
+
+const TIME_CONSTANTS = {
+    SECONDS_PER_DAY: 86400,
+    MS_PER_SECOND: 1000,
+};
+
+// ─── Helper Functions (Global Scope) ─────────────────────────────────────────
+/* eslint-disable no-unused-vars */
+
+function buildArrayParam(paramName, values) {
+    if (!values || values.length === 0) return '';
+    return values.map(v => `&${paramName}%5B%5D=${encodeURIComponent(v)}`).join('');
+}
+
+function parseJSONSafe(jsonString, defaultValue, validator) {
+    if (jsonString === undefined || jsonString === null || jsonString === '') {
+        return defaultValue;
+    }
+    try {
+        const parsed = JSON.parse(jsonString);
+        return validator(parsed) ? parsed : defaultValue;
+    } catch (_) {
+        return defaultValue;
+    }
+}
+
+function isValidSpeechInRange(talk, dateFromTs, dateTillTs) {
+    return talk.is_speech && talk.date >= dateFromTs && talk.date <= dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
+}
+
+function settingsHeader(title, marginTop = '16px') {
+    return `<h4 style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:${COLORS.DARK_GRAY};margin:${marginTop} 0 12px 0;padding-bottom:8px;border-bottom:1px solid ${COLORS.MEDIUM_GRAY};">${escHtml(title)}</h4>`;
+}
+
+function checkboxLabel(text, id, isChecked, marginBottom = '16px') {
+    return `<label style="display:flex;align-items:center;gap:${SPACING.LG};cursor:pointer;margin-bottom:${marginBottom};">
+        <input id="${id}" type="checkbox" ${isChecked ? 'checked' : ''} style="cursor:pointer;">
+        <span>${escHtml(text)}</span>
+    </label>`;
+}
+
+function createDateInput(label, id, value) {
+    return `<label style="display:flex;align-items:center;gap:${SPACING.SM};color:${COLORS.TEXT_GRAY};">
+        <span style="font-size:12px;font-weight:500;">${label}</span>
+        <input id="${id}" type="date" value="${value}" style="padding:${SPACING.XS} ${SPACING.SM};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:12px;">
+    </label>`;
+}
+
+function formatTimeRange(startTs, endTs, separator = '-') {
+    const t1 = fmtTime(startTs, ':');
+    const t2 = fmtTime(endTs, ':');
+    return `${t1} ${separator} ${t2}`;
+}
+
+function seriesEventLink(seriesLink, seriesTitle) {
+    return `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(seriesTitle)}</a></div>`;
+}
+
+/* eslint-enable no-unused-vars */
+
 (function () {
     'use strict';
 
@@ -28,12 +123,60 @@
         .tm-spinner {
             display: inline-block;
             width: 16px; height: 16px;
-            border: 2px solid #ddd;
-            border-top-color: #0066cc;
+            border: 2px solid ${COLORS.LIGHT_BORDER};
+            border-top-color: ${COLORS.LINK_BLUE};
             border-radius: 50%;
             animation: tm-spin 0.7s linear infinite;
             vertical-align: middle;
-            margin-right: 8px;
+            margin-right: ${SPACING.LG};
+        }
+        .tm-btn-primary {
+            padding: ${SPACING.MD} ${SPACING.XL};
+            background: ${COLORS.PRIMARY_BLUE};
+            color: ${COLORS.WHITE};
+            border: none;
+            border-radius: ${BORDER_RADIUS.MEDIUM};
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .tm-btn-primary:hover {
+            background: ${COLORS.DARK_BLUE};
+        }
+        .tm-btn-secondary {
+            padding: ${SPACING.MD} ${SPACING.XL};
+            background: ${COLORS.WHITE};
+            color: ${COLORS.TEXT_GRAY};
+            border: 1px solid ${COLORS.INPUT_BORDER};
+            border-radius: ${BORDER_RADIUS.MEDIUM};
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tm-input-date {
+            padding: ${SPACING.XS} ${SPACING.SM};
+            border: 1px solid ${COLORS.INPUT_BORDER};
+            border-radius: ${BORDER_RADIUS.SMALL};
+            font-size: 12px;
+        }
+        .tm-input-search {
+            width: 100%;
+            padding: ${SPACING.MD} ${SPACING.LG};
+            margin-bottom: ${SPACING.XL};
+            border: 1px solid ${COLORS.INPUT_BORDER};
+            border-radius: ${BORDER_RADIUS.SMALL};
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+        .tm-label-flex {
+            display: flex;
+            align-items: center;
+            gap: ${SPACING.LG};
+            cursor: pointer;
+        }
+        .tm-checkbox {
+            cursor: pointer;
         }
     `);
 
@@ -44,7 +187,8 @@
 
 const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
-    STORAGE_KEY_GROUP_SERIES: 'tm_group_series',
+    STORAGE_KEY_FORMATS: 'tm_event_formats',
+    DEFAULT_FORMATS: ['Тільки онлайн', 'Офлайн зі стрімом'],
     DEFAULT_TAGS: [
 		'[24]/7.ai',
 		'Additive Machine Learning Models',
@@ -180,36 +324,28 @@ const SettingsManager = {
 		'TelescopeAI Perf',
 		'TONIC AI'
 	],
-    DEFAULT_GROUP_SERIES: false,
 
     getTags() {
         const stored = GM_getValue(this.STORAGE_KEY);
-        if (!stored) return this.DEFAULT_TAGS;
-        try {
-            const parsed = JSON.parse(stored);
-            return Array.isArray(parsed) && parsed.length > 0 ? parsed : this.DEFAULT_TAGS;
-        } catch (_) {
-            return this.DEFAULT_TAGS;
-        }
+        return parseJSONSafe(stored, this.DEFAULT_TAGS, p => Array.isArray(p) && p.length > 0);
     },
 
     setTags(tags) {
         GM_setValue(this.STORAGE_KEY, JSON.stringify(tags));
     },
 
-    getGroupSeries() {
-        const stored = GM_getValue(this.STORAGE_KEY_GROUP_SERIES);
-        if (stored === undefined || stored === null || stored === '') return this.DEFAULT_GROUP_SERIES;
-        return stored === 'true' || stored === true;
+    getFormats() {
+        const stored = GM_getValue(this.STORAGE_KEY_FORMATS);
+        return parseJSONSafe(stored, this.DEFAULT_FORMATS, p => Array.isArray(p) && p.length > 0);
     },
 
-    setGroupSeries(value) {
-        GM_setValue(this.STORAGE_KEY_GROUP_SERIES, String(value));
+    setFormats(formats) {
+        GM_setValue(this.STORAGE_KEY_FORMATS, JSON.stringify(formats));
     },
 
     reset() {
         GM_setValue(this.STORAGE_KEY, '');
-        GM_setValue(this.STORAGE_KEY_GROUP_SERIES, '');
+        GM_setValue(this.STORAGE_KEY_FORMATS, '');
     }
 };
 
@@ -228,13 +364,13 @@ function createUI() {
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: '99999',
-        background: '#fff',
-        padding: '12px 16px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
+        background: COLORS.WHITE,
+        padding: `${SPACING.XL} ${SPACING.XXL}`,
+        border: `1px solid ${COLORS.LIGHT_BORDER}`,
+        borderRadius: BORDER_RADIUS.LARGE,
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: SPACING.XL,
         fontFamily: 'sans-serif',
         fontSize: '13px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
@@ -243,20 +379,20 @@ function createUI() {
     const dateGroup = document.createElement('div');
     Object.assign(dateGroup.style, {
         display: 'flex',
-        gap: '8px',
+        gap: SPACING.LG,
         alignItems: 'center',
-        paddingRight: '12px',
-        borderRight: '1px solid #e0e0e0',
+        paddingRight: SPACING.XL,
+        borderRight: `1px solid ${COLORS.BORDER_GRAY}`,
     });
 
     const fromLabel = document.createElement('label');
-    Object.assign(fromLabel.style, { display: 'flex', alignItems: 'center', gap: '4px', color: '#666' });
-    fromLabel.innerHTML = `<span style="font-size:12px;font-weight:500;">Від:</span><input id="tm-from" type="date" value="${toInputDate(today)}" style="padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:12px;">`;
+    Object.assign(fromLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
+    fromLabel.innerHTML = createDateInput('Від:', 'tm-from', toInputDate(today));
     dateGroup.appendChild(fromLabel);
 
     const tillLabel = document.createElement('label');
-    Object.assign(tillLabel.style, { display: 'flex', alignItems: 'center', gap: '4px', color: '#666' });
-    tillLabel.innerHTML = `<span style="font-size:12px;font-weight:500;">До:</span><input id="tm-till" type="date" value="${toInputDate(weekLater)}" style="padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:12px;">`;
+    Object.assign(tillLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
+    tillLabel.innerHTML = createDateInput('До:', 'tm-till', toInputDate(weekLater));
     dateGroup.appendChild(tillLabel);
 
     panel.appendChild(dateGroup);
@@ -264,7 +400,7 @@ function createUI() {
     const btnGroup = document.createElement('div');
     Object.assign(btnGroup.style, {
         display: 'flex',
-        gap: '6px',
+        gap: `${parseInt(SPACING.MD) - 2}px`,
         alignItems: 'center',
     });
 
@@ -272,40 +408,40 @@ function createUI() {
     getBtn.id = 'tm-btn';
     getBtn.textContent = '▶ Get schedule';
     Object.assign(getBtn.style, {
-        padding: '6px 16px',
+        padding: `${SPACING.MD} ${SPACING.XXL}`,
         cursor: 'pointer',
         fontWeight: '600',
-        background: '#007bff',
-        color: '#fff',
+        background: COLORS.PRIMARY_BLUE,
+        color: COLORS.WHITE,
         border: 'none',
-        borderRadius: '6px',
+        borderRadius: BORDER_RADIUS.MEDIUM,
         fontSize: '13px',
         transition: 'background 0.2s',
     });
-    getBtn.onmouseover = () => { getBtn.style.background = '#0056cc'; };
-    getBtn.onmouseout = () => { getBtn.style.background = '#007bff'; };
+    getBtn.onmouseover = () => { getBtn.style.background = COLORS.DARK_BLUE; };
+    getBtn.onmouseout = () => { getBtn.style.background = COLORS.PRIMARY_BLUE; };
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'tm-settings-btn';
     settingsBtn.textContent = '⚙ Settings';
     Object.assign(settingsBtn.style, {
-        padding: '6px 12px',
+        padding: `${SPACING.MD} ${SPACING.XL}`,
         cursor: 'pointer',
         fontWeight: '500',
-        background: '#fff',
-        color: '#666',
-        border: '1px solid #ccc',
-        borderRadius: '6px',
+        background: COLORS.WHITE,
+        color: COLORS.TEXT_GRAY,
+        border: `1px solid ${COLORS.INPUT_BORDER}`,
+        borderRadius: BORDER_RADIUS.MEDIUM,
         fontSize: '13px',
         transition: 'all 0.2s',
     });
     settingsBtn.onmouseover = () => {
-        settingsBtn.style.background = '#f5f5f5';
-        settingsBtn.style.borderColor = '#999';
+        settingsBtn.style.background = COLORS.LIGHT_GRAY;
+        settingsBtn.style.borderColor = COLORS.DARK_GRAY;
     };
     settingsBtn.onmouseout = () => {
-        settingsBtn.style.background = '#fff';
-        settingsBtn.style.borderColor = '#ccc';
+        settingsBtn.style.background = COLORS.WHITE;
+        settingsBtn.style.borderColor = COLORS.INPUT_BORDER;
     };
 
     btnGroup.appendChild(getBtn);
@@ -347,7 +483,7 @@ async function onFetch() {
                 .filter(e => e.size !== 's')
                 .map(async e => {
                     try { agendaMap[e.id] = await fetchAgenda(e.id); }
-                    catch (_) { /* leave undefined — will fall back to date range */ }
+                    catch (_) { /* eslint-disable-line no-unused-vars */ /* leave undefined — will fall back to date range */ }
                 })
         );
 
@@ -374,24 +510,22 @@ function chipHtml(tags) {
 
 function createSettingsUIHtml() {
     const currentTags = SettingsManager.getTags();
-    const groupSeries = SettingsManager.getGroupSeries();
+    const currentFormats = SettingsManager.getFormats();
     const selectedHtml = chipHtml(currentTags);
 
     return `
-        <h4 style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#999;margin:0 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e8e8e8;">Select Tags</h4>
-        <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:6px 8px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">
-        <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-bottom:12px;"></div>
-        <div id="tm-settings-selected" style="margin-bottom:12px;min-height:24px;">${selectedHtml}</div>
+        ${settingsHeader('Select Tags', '0')}
+        <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:10px;border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
+        <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid ${COLORS.LIGHT_BORDER};border-radius:${BORDER_RADIUS.SMALL};margin-bottom:${SPACING.XL};"></div>
+        <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
-        <h4 style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:#999;margin:16px 0 12px 0;padding-bottom:8px;border-bottom:1px solid #e8e8e8;">Display Options</h4>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:16px;">
-            <input id="tm-settings-group-series" type="checkbox" ${groupSeries ? 'checked' : ''} style="cursor:pointer;">
-            <span>Group series events</span>
-        </label>
+        ${settingsHeader('Event Format')}
+        ${checkboxLabel('Тільки онлайн', 'tm-format-online', currentFormats.includes('Тільки онлайн'), SPACING.LG)}
+        ${checkboxLabel('Офлайн зі стрімом', 'tm-format-offline-stream', currentFormats.includes('Офлайн зі стрімом'))}
 
-        <div style="display:flex;gap:8px;padding-top:12px;border-top:1px solid #e8e8e8;">
-            <button id="tm-settings-save" style="padding:6px 12px;cursor:pointer;background:#007bff;color:#fff;border:none;border-radius:4px;font-size:13px;flex:1;">Save</button>
-            <button id="tm-settings-reset" style="padding:6px 12px;cursor:pointer;background:#fff;color:#666;border:1px solid #ccc;border-radius:4px;font-size:13px;flex:1;">Reset</button>
+        <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
+            <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;">Save</button>
+            <button id="tm-settings-reset" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;">Reset</button>
         </div>
     `;
 }
@@ -403,9 +537,10 @@ function attachSettingsHandlers() {
     const selectedList = document.getElementById('tm-settings-selected');
     const saveBtn = document.getElementById('tm-settings-save');
     const resetBtn = document.getElementById('tm-settings-reset');
-    const groupSeriesCheckbox = document.getElementById('tm-settings-group-series');
+    const formatOnlineCheckbox = document.getElementById('tm-format-online');
+    const formatOfflineStreamCheckbox = document.getElementById('tm-format-offline-stream');
 
-    if (!searchInput || !dropdown || !saveBtn || !resetBtn || !groupSeriesCheckbox) return;
+    if (!searchInput || !dropdown || !saveBtn || !resetBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
 
     const tagCheckboxes = {};
     let allOptions = [...currentTags];
@@ -434,9 +569,9 @@ function attachSettingsHandlers() {
             const label = document.createElement('label');
             Object.assign(label.style, {
                 display: 'block',
-                padding: '6px 8px',
+                padding: `${SPACING.MD} ${SPACING.LG}`,
                 cursor: 'pointer',
-                borderBottom: '1px solid #eee',
+                borderBottom: `1px solid ${COLORS.VERY_LIGHT_BORDER}`,
             });
 
             const checkbox = document.createElement('input');
@@ -447,7 +582,7 @@ function attachSettingsHandlers() {
 
             const span = document.createElement('span');
             span.textContent = escHtml(tag);
-            Object.assign(span.style, { marginLeft: '6px' });
+            Object.assign(span.style, { marginLeft: SPACING.LG });
 
             label.appendChild(checkbox);
             label.appendChild(span);
@@ -468,7 +603,12 @@ function attachSettingsHandlers() {
             updateDropdown('');
             selectedList.innerHTML = chipHtml(selected);
         }
-        SettingsManager.setGroupSeries(groupSeriesCheckbox.checked);
+
+        // Save format selections
+        const selectedFormats = [];
+        if (formatOnlineCheckbox.checked) selectedFormats.push('Тільки онлайн');
+        if (formatOfflineStreamCheckbox.checked) selectedFormats.push('Офлайн зі стрімом');
+        SettingsManager.setFormats(selectedFormats);
     };
 
     resetBtn.onclick = () => {
@@ -477,7 +617,9 @@ function attachSettingsHandlers() {
         currentTags.push(...SettingsManager.DEFAULT_TAGS);
         updateDropdown('');
         selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
-        groupSeriesCheckbox.checked = SettingsManager.DEFAULT_GROUP_SERIES;
+        // Reset format checkboxes to default
+        formatOnlineCheckbox.checked = true;
+        formatOfflineStreamCheckbox.checked = true;
     };
 
     updateDropdown('');
@@ -489,11 +631,11 @@ function gmGet(url) {
             method: 'GET',
             url,
             headers: { Accept: 'application/json' },
-            onload(r) {
-                try { resolve(JSON.parse(r.responseText)); }
-                catch (e) { reject(new Error('JSON parse error: ' + url)); }
-            },
-            onerror() { reject(new Error('Network error: ' + url)); },
+             onload(r) {
+                 try { resolve(JSON.parse(r.responseText)); }
+                 catch (_) { /* eslint-disable-line no-unused-vars */ reject(new Error('JSON parse error: ' + url)); }
+             },
+             onerror() { reject(new Error('Network error: ' + url)); },
         });
     });
 }
@@ -507,10 +649,15 @@ async function fetchAllEvents(dateFrom, dateTill) {
     const from = encodeURIComponent(toAPIDate(dateFrom));
     const till = encodeURIComponent(toAPIDate(dateTill));
     const tags = SettingsManager.getTags();
-    const tagParams = tags.map(t => `&tag%5B%5D=${encodeURIComponent(t)}`).join('');
+    const formats = SettingsManager.getFormats();
+    
+    const tagParams = buildArrayParam('tag', tags);
+    const formatParams = buildArrayParam('event_participation_format', formats);
+    
     const base =
         `https://wearecommunity.io/api/v2/events.json?period=upcoming` +
         tagParams +
+        formatParams +
         `&date_from=${from}&date_till=${till}`;
 
     const first = await gmGet(`${base}&start=0`);
@@ -573,99 +720,54 @@ function eventPageUrl(event) {
 
 function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
-    const groupSeries = SettingsManager.getGroupSeries();
 
     const filtered = events.filter(e => {
-        if (e.size === 's') return e.time_stamp.start >= dateFromTs && e.time_stamp.start < dateTillTs;
+        if (e.size === 's') return e.time_stamp.start >= dateFromTs && e.time_stamp.start <= dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
         return true;
     });
 
-    if (groupSeries) {
-        // Grouped mode: group by (date, series), sort by date then series title
-        const items = [];
+    // Ungrouped mode: flatten all talks and sort globally by date
+    const allItems = [];
 
-        filtered.forEach(e => {
-            if (e.size === 's') {
-                items.push({ type: 'single', date: e.time_stamp.start, event: e });
-            } else {
-                const agendaData = agendaMap[e.id];
-                const talks = agendaData && agendaData.agenda && agendaData.agenda.items
-                    ? agendaData.agenda.items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs)
-                    : [];
-
-                if (talks.length > 0) {
-                    const talksByDate = {};
-                    talks.forEach(talk => {
-                        const dateKey = Math.floor(talk.date / 86400) * 86400;
-                        if (!talksByDate[dateKey]) talksByDate[dateKey] = [];
-                        talksByDate[dateKey].push(talk);
-                    });
-
-                    Object.entries(talksByDate).forEach(([dateKey, dateTalks]) => {
-                        dateTalks.sort((a, b) => a.date - b.date);
-                        items.push({ type: 'series-group', date: parseInt(dateKey), event: e, talks: dateTalks });
-                    });
-                }
+    filtered.forEach(e => {
+        if (e.size === 's') {
+            allItems.push({ type: 'single', event: e, sortDate: e.time_stamp.start, title: e.title });
+        } else {
+            const agendaData = agendaMap[e.id];
+            const items = agendaData && agendaData.agenda && agendaData.agenda.items;
+            if (items) {
+                const talks = items.filter(i => isValidSpeechInRange(i, dateFromTs, dateTillTs));
+                talks.forEach(talk => {
+                    allItems.push({ type: 'talk', event: e, talk: talk, sortDate: talk.date, title: talk.title });
+                });
             }
-        });
+        }
+    });
 
-        items.sort((a, b) => {
-            if (a.date !== b.date) return a.date - b.date;
-            return a.event.title.localeCompare(b.event.title, 'uk');
-        });
+    allItems.sort((a, b) => {
+        if (a.sortDate !== b.sortDate) return a.sortDate - b.sortDate;
+        return a.title.localeCompare(b.title, 'uk');
+    });
 
-        return items
-            .map(item => {
-                if (item.type === 'single') {
-                    return renderCard(renderSingle(item.event), false);
-                } else {
-                    return renderCard(renderSeriesGroup(item.event, item.talks), true);
-                }
-            })
-            .join('<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">');
-    } else {
-        // Ungrouped mode: flatten all talks and sort globally by date
-        const allItems = [];
-
-        filtered.forEach(e => {
-            if (e.size === 's') {
-                allItems.push({ type: 'single', event: e, sortDate: e.time_stamp.start, title: e.title });
+    return allItems
+        .map(item => {
+            if (item.type === 'single') {
+                return renderCard(renderSingle(item.event), false);
             } else {
-                const agendaData = agendaMap[e.id];
-                const items = agendaData && agendaData.agenda && agendaData.agenda.items;
-                if (items) {
-                    const talks = items.filter(i => i.is_speech && i.date >= dateFromTs && i.date < dateTillTs);
-                    talks.forEach(talk => {
-                        allItems.push({ type: 'talk', event: e, talk: talk, sortDate: talk.date, title: talk.title });
-                    });
-                }
+                return renderCard(renderTalk(item.event, item.talk), false);
             }
-        });
-
-        allItems.sort((a, b) => {
-            if (a.sortDate !== b.sortDate) return a.sortDate - b.sortDate;
-            return a.title.localeCompare(b.title, 'uk');
-        });
-
-        return allItems
-            .map(item => {
-                if (item.type === 'single') {
-                    return renderCard(renderSingle(item.event), false);
-                } else {
-                    return renderCard(renderTalk(item.event, item.talk), false);
-                }
-            })
-            .join('<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">');
-    }
+        })
+        .join(`<hr style="border:none;border-top:1px solid ${COLORS.LIGHT_BORDER};margin:10px 0">`);
 }
 
 // ─── Card Wrapper ────────────────────────────────────────────────────────────
 
 function renderCard(innerHtml, isSeries) {
-    const borderStyle = isSeries ? 'border-left: 3px solid #0066cc;' : 'border-left: 3px solid transparent;';
-    return `<div style="${borderStyle}padding: 10px 14px;margin-bottom: 6px;border-radius: 6px;background: #f9f9f9;border: 1px solid #e8e8e8;border-left-width:3px;">${innerHtml}</div>`;
+    return `<div style="border-left: 3px solid transparent;padding: 10px 14px;margin-bottom: 6px;border-radius: ${BORDER_RADIUS.MEDIUM};background: ${COLORS.OFF_WHITE};border: 1px solid ${COLORS.MEDIUM_GRAY};border-left-width:3px;">${innerHtml}</div>`;
 }
 
+// TODO: Leftovers, Remove later
+/* eslint-disable-next-line no-unused-vars */
 function renderSeriesGroup(event, talks) {
     const seriesLink = eventPageUrl(event);
     const lang = escHtml(getLang(event));
@@ -675,15 +777,14 @@ function renderSeriesGroup(event, talks) {
     const lines = [
         `<div>`,
         `<div>${fmtDate(talks[0].date)}</div>`,
-        `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+        seriesEventLink(seriesLink, event.title),
     ];
 
     talks.forEach(talk => {
-        const t1 = fmtTime(talk.date, ':');
-        const t2 = fmtTime(talk.date + talk.duration_min * 60, ':');
+        const timeRange = formatTimeRange(talk.date, talk.date + talk.duration_min * 60);
         const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
         lines.push(
-            `<div style="padding-left:16px"><b>•</b> ${t1} - ${t2}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`
+            `<div style="padding-left:16px"><b>•</b> ${timeRange}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`
         );
     });
 
@@ -708,13 +809,12 @@ function renderSingle(event) {
 function renderTalk(event, talk) {
     const seriesLink = eventPageUrl(event);
     const lang = escHtml(getLang(event));
-    const t1 = fmtTime(talk.date, ':');
-    const t2 = fmtTime(talk.date + talk.duration_min * 60, ':');
+    const timeRange = formatTimeRange(talk.date, talk.date + talk.duration_min * 60);
     const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
     return [
         `<div>`,
-        `<div>${fmtDate(talk.date)}, ${t1} - ${t2}</div>`,
-        `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(event.title)}</a></div>`,
+        `<div>${fmtDate(talk.date)}, ${timeRange}</div>`,
+        seriesEventLink(seriesLink, event.title),
         `<div style="font-weight:600;margin-top:2px;"><a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
         `<div>Мова: ${lang}</div>`,
         `</div>`,
