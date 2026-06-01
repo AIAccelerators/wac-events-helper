@@ -676,7 +676,7 @@ function attachSettingsHandlers() {
     };
 
     unselectAllBtn.onclick = () => {
-        Object.values(tagCheckboxes).forEach(cb => cb.checked = false);
+        Object.values(tagCheckboxes).forEach(cb => { cb.checked = false; });
         formatOnlineCheckbox.checked = false;
         formatOfflineStreamCheckbox.checked = false;
         selectedList.innerHTML = '';
