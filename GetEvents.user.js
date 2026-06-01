@@ -549,7 +549,7 @@ function attachSettingsHandlers() {
 
     async function updateDropdown(query) {
         dropdown.innerHTML = '';
-        tagCheckboxes = {}; // fix: always clear mapping to avoid stale checkboxes
+        Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
         let options = allOptions;
 
         if (query.trim()) {
