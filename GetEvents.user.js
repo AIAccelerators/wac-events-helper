@@ -573,63 +573,64 @@ function attachSettingsHandlers() {
     const tagCheckboxes = {};
     let allOptions = [...currentTags];
 
-    async function updateDropdown(query) {
-        dropdown.innerHTML = '';
-        Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
-        let options = allOptions;
+     async function updateDropdown(query) {
+         dropdown.innerHTML = '';
+         Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
+         let options = allOptions;
 
-        if (query.trim()) {
-            // Search mode: show ONLY API filtered results
-            try {
-                const results = await gmGet(
-                    `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
-                );
-                if (Array.isArray(results)) {
-                    // Show only search results, not merged with allOptions
-                    options = results;
-                }
-            } catch (err) {
-                console.error('Tag search failed:', err);
-            }
-        } else {
-            // Empty search: show user's current selections (allOptions represents current state)
-            options = allOptions;
-        }
+         if (query.trim()) {
+             // Search mode: merge API results with current selections
+             try {
+                 const results = await gmGet(
+                     `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
+                 );
+                 if (Array.isArray(results)) {
+                     // Merge search results with currently selected tags to avoid loss
+                     options = [...new Set([...currentTags, ...results])];
+                 }
+             } catch (err) {
+                 console.error('Tag search failed:', err);
+             }
+         } else {
+             // Empty search: show all currently selected tags
+             options = allOptions;
+         }
 
-        options = [...new Set(options)].sort();
+         options = [...new Set(options)].sort();
 
-        options.forEach(tag => {
-            const label = document.createElement('label');
-            Object.assign(label.style, {
-                display: 'block',
-                padding: `${SPACING.MD} ${SPACING.LG}`,
-                cursor: 'pointer',
-                borderBottom: `1px solid ${COLORS.VERY_LIGHT_BORDER}`,
-            });
+         options.forEach(tag => {
+             const label = document.createElement('label');
+             Object.assign(label.style, {
+                 display: 'block',
+                 padding: `${SPACING.MD} ${SPACING.LG}`,
+                 cursor: 'pointer',
+                 borderBottom: `1px solid ${COLORS.VERY_LIGHT_BORDER}`,
+             });
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = tag;
-            // Pre-check if this tag is in currentTags (user's selection)
-            checkbox.checked = currentTags.includes(tag);
-            tagCheckboxes[tag] = checkbox;
+             const checkbox = document.createElement('input');
+             checkbox.type = 'checkbox';
+             checkbox.value = tag;
+             // Pre-check if this tag is in currentTags (user's selection)
+             checkbox.checked = currentTags.includes(tag);
+             tagCheckboxes[tag] = checkbox;
 
-            // Update save button state and chips on any change
-            checkbox.addEventListener('change', () => {
-                updateSaveButtonState();
-                updateSelectedChips();
-            });
+             // Update save button state and chips on any change
+             checkbox.addEventListener('change', () => {
+                 updateSaveButtonState();
+                 updateSelectedChips();
+             });
 
-            const span = document.createElement('span');
-            span.textContent = escHtml(tag);
-            Object.assign(span.style, { marginLeft: SPACING.LG });
+             const span = document.createElement('span');
+             span.textContent = escHtml(tag);
+             Object.assign(span.style, { marginLeft: SPACING.LG });
 
-            label.appendChild(checkbox);
-            label.appendChild(span);
-            dropdown.appendChild(label);
-        });
-        updateSaveButtonState();
-    }
+             label.appendChild(checkbox);
+             label.appendChild(span);
+             dropdown.appendChild(label);
+         });
+         updateSaveButtonState();
+         attachChipRemoveHandlers();
+     }
 
     searchInput.addEventListener('input', e => updateDropdown(e.target.value));
 
@@ -650,18 +651,16 @@ function attachSettingsHandlers() {
         }
     }
 
-    function updateSelectedChips() {
-        const checkedTags = Object.entries(tagCheckboxes)
-            .filter(([_, cb]) => cb.checked)
-            .map(([tag, _]) => tag);
-        // Update currentTags to reflect current selections (important for when user clears search)
-        currentTags.length = 0;
-        currentTags.push(...checkedTags);
-        // Update allOptions to match current selection
-        allOptions = [...checkedTags];
-        selectedList.innerHTML = chipHtml(checkedTags);
-        attachChipRemoveHandlers();
-    }
+     function updateSelectedChips() {
+         const checkedTags = Object.entries(tagCheckboxes)
+             .filter(([_, cb]) => cb.checked)
+             .map(([tag, _]) => tag);
+         // Update currentTags to reflect current selections
+         currentTags.length = 0;
+         currentTags.push(...checkedTags);
+         selectedList.innerHTML = chipHtml(checkedTags);
+         attachChipRemoveHandlers();
+     }
 
     function attachChipRemoveHandlers() {
         const removeButtons = document.querySelectorAll('.chip-remove-btn');
@@ -762,10 +761,9 @@ function attachSettingsHandlers() {
         }, 1500);
     };
 
-    updateDropdown('');
-    updateSaveButtonState();
-    attachChipRemoveHandlers();
-}
+     updateDropdown('');
+     updateSaveButtonState();
+ }
 
 function gmGet(url) {
     return new Promise((resolve, reject) => {
