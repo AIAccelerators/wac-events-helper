@@ -178,6 +178,32 @@ function seriesEventLink(seriesLink, seriesTitle) {
         .tm-checkbox {
             cursor: pointer;
         }
+        .tm-chip {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a56db;
+            padding: 4px 12px;
+            margin: 4px 4px 4px 0;
+            border-radius: 12px;
+            font-size: 12px;
+            position: relative;
+            padding-right: 20px;
+        }
+        .chip-remove-btn {
+            position: absolute;
+            right: 2px;
+            top: 0;
+            bottom: 0;
+            width: 18px;
+            background: none;
+            border: none;
+            color: #1a56db;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 0;
+            line-height: 1;
+        }
     `);
 
     createUI();
@@ -505,7 +531,7 @@ async function showSettingsModal() {
 }
 
 function chipHtml(tags) {
-    return tags.map(t => `<span style="display:inline-block;background:#e8f0fe;color:#1a56db;padding:4px 12px;margin:4px 4px 4px 0;border-radius:12px;font-size:12px;position:relative;padding-right:20px;" data-tag="${escHtml(t)}"><span>${escHtml(t)}</span><button class="chip-remove-btn" style="position:absolute;right:2px;top:0;bottom:0;width:18px;background:none;border:none;color:#1a56db;cursor:pointer;font-size:16px;font-weight:bold;padding:0;line-height:1;" title="Remove this tag">&times;</button></span>`).join('');
+    return tags.map(t => `<span class="tm-chip" data-tag="${escHtml(t)}"><span>${escHtml(t)}</span><button class="chip-remove-btn" title="Remove this tag">&times;</button></span>`).join('');
 }
 
 function createSettingsUIHtml() {
