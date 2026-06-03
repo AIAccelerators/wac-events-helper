@@ -578,19 +578,20 @@ function attachSettingsHandlers() {
           Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
           let options = [];
 
-          if (query.trim()) {
-              // Search mode: fetch API results and merge with current selections
-              try {
-                  const results = await gmGet(
-                      `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
-                  );
-                  if (Array.isArray(results)) {
-                      // Merge search results with currently selected tags to avoid loss
-                      options = [...new Set([...currentTags, ...results])];
-                  }
-              } catch (err) {
-                  console.error('Tag search failed:', err);
-              }
+           if (query.trim()) {
+               // Search mode: LEFT JOIN search results with current selections
+               // Show search results, highlight those already selected
+               try {
+                   const results = await gmGet(
+                       `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
+                   );
+                   if (Array.isArray(results)) {
+                       // Display only search results; checked state determined by currentTags
+                       options = [...new Set(results)];
+                   }
+               } catch (err) {
+                   console.error('Tag search failed:', err);
+               }
           } else {
               // Empty search: show all currently selected tags
               options = [...allOptions];
@@ -607,12 +608,12 @@ function attachSettingsHandlers() {
                  borderBottom: `1px solid ${COLORS.VERY_LIGHT_BORDER}`,
              });
 
-             const checkbox = document.createElement('input');
-             checkbox.type = 'checkbox';
-             checkbox.value = tag;
-             // Pre-check if this tag is in currentTags (user's selection)
-             checkbox.checked = currentTags.includes(tag);
-             tagCheckboxes[tag] = checkbox;
+              const checkbox = document.createElement('input');
+              checkbox.type = 'checkbox';
+              checkbox.value = tag;
+              // LEFT JOIN: Mark checked if tag already in user's current selections
+              checkbox.checked = currentTags.includes(tag);
+              tagCheckboxes[tag] = checkbox;
 
              // Update save button state and chips on any change
              checkbox.addEventListener('change', () => {
