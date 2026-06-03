@@ -94,20 +94,16 @@ function isLanguageBlocked(language) {
     if (language.includes(',')) {
         // Split by comma and check if ANY part is blocked
         const languages = language.split(',').map(l => l.trim());
-        const blocked = languages.some(lang => 
+        return languages.some(lang => 
             LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(lang) || 
             LANGUAGE_FILTERS.BLOCKED_CODES.includes(lang)
         );
-        console.log(`🔍 [isLanguageBlocked] Multi-lang: "${language}" → Split: ${JSON.stringify(languages)} → Blocked: ${blocked}`);
-        return blocked;
     }
     
     // Single language check
-    const isInBlockedLangs = LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(language);
-    const isInBlockedCodes = LANGUAGE_FILTERS.BLOCKED_CODES.includes(language);
-    const result = isInBlockedLangs || isInBlockedCodes;
-    console.log(`🔍 [isLanguageBlocked] Single: "${language}" → BlockedLangs: ${isInBlockedLangs}, BlockedCodes: ${isInBlockedCodes} → Result: ${result}`);
-    return result;
+    if (LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(language)) return true;
+    if (LANGUAGE_FILTERS.BLOCKED_CODES.includes(language)) return true;
+    return false;
 }
 
 function settingsHeader(title, marginTop = '16px') {
@@ -1033,52 +1029,28 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
 
     const dateRangeEnd = dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
-    console.log(`📊 [renderEvents] Starting with ${events.length} events`);
-    console.log(`📊 [LANGUAGE_FILTERS] BLOCKED_LANGUAGES: ${JSON.stringify(LANGUAGE_FILTERS.BLOCKED_LANGUAGES)}, BLOCKED_CODES: ${JSON.stringify(LANGUAGE_FILTERS.BLOCKED_CODES)}`);
-    console.log(`📊 [DATE_RANGE] ${new Date(dateFromTs * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} to ${new Date(dateRangeEnd * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} (ts: ${dateFromTs} to ${dateRangeEnd})`);
-
     const filtered = events.filter(e => {
         if (e.size === 's') return e.time_stamp.start >= dateFromTs && e.time_stamp.start <= dateRangeEnd;
         return true;
     });
-
-    console.log(`📊 [renderEvents] After date filter: ${filtered.length} events`);
 
     // Flatten all single events and talks for grouping
     const allItems = [];
 
     filtered.forEach(e => {
         if (e.size === 's') {
-            const eventLang = getLang(e);
-            console.log(`📊 [Single Event] "${e.title.substring(0, 40)}" → Language: "${eventLang}"`);
             allItems.push({ type: 'single', event: e, sortDate: e.time_stamp.start, title: e.title });
         } else {
             const agendaData = agendaMap[e.id];
             const items = agendaData && agendaData.agenda && agendaData.agenda.items;
             if (items) {
                 const talks = items.filter(i => isValidSpeechInRange(i, dateFromTs, dateTillTs));
-                const dateRangeEnd = dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
-                console.log(`📊 [Series Event] "${e.title.substring(0, 40)}" (ID: ${e.id}) → Total talks in date range: ${talks.length}`);
-                console.log(`   📋 Date range: ${new Date(dateFromTs * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} to ${new Date(dateRangeEnd * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} (including +1 day)`);
-                console.log(`   📋 All talks in event: ${agendaMap[e.id]?.agenda?.items?.length || 0}`);
-                
-                // Debug: show why talks were filtered out
-                if (items.length !== talks.length) {
-                    const filtered_out = items.filter(i => !isValidSpeechInRange(i, dateFromTs, dateTillTs));
-                    filtered_out.slice(0, 3).forEach(talk => {
-                        console.log(`   ❌ Filtered by date: "${talk.title.substring(0, 40)}" (ID: ${talk.id}) → Date: ${new Date(talk.date * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} (ts: ${talk.date})`);
-                    });
-                }
                 
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
                     const talkLang = talk.short_language || getLang(e);
-                    const isBlocked = isLanguageBlocked(talkLang);
-                    console.log(`   📍 Talk: "${talk.title.substring(0, 40)}" (ID: ${talk.id}) → Lang: "${talkLang}" → Blocked: ${isBlocked}`);
-                    return !isBlocked;
+                    return !isLanguageBlocked(talkLang);
                 });
-                
-                console.log(`   ✅ Allowed talks: ${allowedTalks.length} / ${talks.length}`);
                 
                 allowedTalks.forEach(talk => {
                     allItems.push({ type: 'talk', event: e, talk: talk, sortDate: talk.date, title: talk.title });
@@ -1086,8 +1058,6 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
             }
         }
     });
-
-    console.log(`📊 [renderEvents] Total items after filtering: ${allItems.length}`);
 
     // Group by (date, series id)
     allItems.sort((a, b) => {
@@ -1135,10 +1105,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                 // Render as series group
                 mergedBlocks.push({ type: 'seriesGroup', event: group.event, talks: group.talks });
             }
-        });
-
-    console.log(`📊 [renderEvents] Final mergedBlocks: ${mergedBlocks.length} blocks`);
-    console.log(`📊 [renderEvents] Breakdown - Single: ${mergedBlocks.filter(b => b.type === 'single').length}, SingleTalk: ${mergedBlocks.filter(b => b.type === 'singleTalk').length}, SeriesGroup: ${mergedBlocks.filter(b => b.type === 'seriesGroup').length}`);
+         });
 
     // Sort all mergedBlocks by their primary timestamp for correct order.
     mergedBlocks.sort((a, b) => {
