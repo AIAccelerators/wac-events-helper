@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GetEvents
 // @namespace    http://tampermonkey.net/
-// @version      0.3.2
+// @version      0.3.3
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
 // @connect      wearecommunity.io/api/v2
@@ -58,6 +58,11 @@ const TIME_CONSTANTS = {
     MS_PER_SECOND: 1000,
 };
 
+const LANGUAGE_FILTERS = {
+    BLOCKED_LANGUAGES: ['Russian'],
+    BLOCKED_CODES: ['Ru'],
+};
+
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
 /* eslint-disable no-unused-vars */
 
@@ -80,6 +85,13 @@ function parseJSONSafe(jsonString, defaultValue, validator) {
 
 function isValidSpeechInRange(talk, dateFromTs, dateTillTs) {
     return talk.is_speech && talk.date >= dateFromTs && talk.date <= dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
+}
+
+function isLanguageBlocked(language) {
+    if (!language) return false;
+    if (LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(language)) return true;
+    if (LANGUAGE_FILTERS.BLOCKED_CODES.includes(language)) return true;
+    return false;
 }
 
 function settingsHeader(title, marginTop = '16px') {
@@ -708,7 +720,7 @@ function attachSettingsHandlers() {
         // Update current query before making request
         currentSearchQuery = query;
         const searchQuery = query; // Capture for comparison
-        
+
         dropdown.innerHTML = '';
         TagsManager.clearCheckboxes();
         let options = [];
@@ -1055,20 +1067,32 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     // Merge all, sorted order
     const mergedBlocks = [];
 
-    // singles sorted in
+    // singles sorted in - FILTER OUT BLOCKED LANGUAGES
     singles.forEach(item => {
-        mergedBlocks.push({ type: 'single', event: item.event });
+        const eventLang = getLang(item.event);
+        if (!isLanguageBlocked(eventLang)) {
+            mergedBlocks.push({ type: 'single', event: item.event });
+        }
     });
-    // Flatten groups, order by min date
+    // Flatten groups, order by min date - FILTER TALKS AND SKIP EMPTY SERIES
     Object.values(grouped)
         .sort((g1, g2) => g1.talks[0].date - g2.talks[0].date)
         .forEach(group => {
-            if (group.talks.length === 1) {
+            // Filter out talks with blocked languages
+            const allowedTalks = group.talks.filter(talk => {
+                const talkLang = talk.short_language || getLang(group.event);
+                return !isLanguageBlocked(talkLang);
+            });
+
+            // Skip entire series if no talks remain after filtering
+            if (allowedTalks.length === 0) return;
+
+            if (allowedTalks.length === 1) {
                 // Render as single talk (series, but only one on this date)
-                mergedBlocks.push({ type: 'singleTalk', event: group.event, talk: group.talks[0] });
+                mergedBlocks.push({ type: 'singleTalk', event: group.event, talk: allowedTalks[0] });
             } else {
                 // Render as series group
-                mergedBlocks.push({ type: 'seriesGroup', event: group.event, talks: group.talks });
+                mergedBlocks.push({ type: 'seriesGroup', event: group.event, talks: allowedTalks });
             }
         });
 
