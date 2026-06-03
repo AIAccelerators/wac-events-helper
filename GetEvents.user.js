@@ -701,7 +701,14 @@ function attachSettingsHandlers() {
 
     if (!searchInput || !dropdown || !saveBtn || !defaultsBtn || !unselectAllBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
 
+    // Track current search to prevent rendering stale API responses
+    let currentSearchQuery = '';
+
     async function updateDropdown(query) {
+        // Update current query before making request
+        currentSearchQuery = query;
+        const searchQuery = query; // Capture for comparison
+        
         dropdown.innerHTML = '';
         TagsManager.clearCheckboxes();
         let options = [];
@@ -713,12 +720,17 @@ function attachSettingsHandlers() {
                 const results = await gmGet(
                     `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
                 );
+                // Ignore response if user has typed a different query while we were fetching
+                if (searchQuery !== currentSearchQuery) {
+                    return;
+                }
                 if (Array.isArray(results)) {
                     // Display only search results; checked state determined by TagsManager.currentTags
                     options = [...new Set(results)];
                 }
             } catch (err) {
                 console.error('Tag search failed:', err);
+                return;
             }
         } else {
             // Empty search: show all currently selected tags
@@ -871,6 +883,8 @@ function attachSettingsHandlers() {
         formatOnlineCheckbox.checked = false;
         formatOfflineStreamCheckbox.checked = false;
         selectedList.innerHTML = '';
+        searchInput.value = '';
+        updateDropdown('');
         updateSaveButtonState();
 
         // Confirmation feedback
@@ -890,6 +904,7 @@ function attachSettingsHandlers() {
 }
 
 function gmGet(url) {
+    console.log('Fetching URL:', url);
     return new Promise((resolve, reject) => {
         GM_xmlhttpRequest({
             method: 'GET',
