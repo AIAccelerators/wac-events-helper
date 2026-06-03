@@ -1056,6 +1056,16 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
             if (items) {
                 const talks = items.filter(i => isValidSpeechInRange(i, dateFromTs, dateTillTs));
                 console.log(`📊 [Series Event] "${e.title.substring(0, 40)}" (ID: ${e.id}) → Total talks in date range: ${talks.length}`);
+                console.log(`   📋 Date range filter: ${new Date(dateFromTs * 1000).toISOString()} to ${new Date(dateTillTs * 1000).toISOString()}`);
+                console.log(`   📋 All talks in event: ${agendaMap[e.id]?.agenda?.items?.length || 0}`);
+                
+                // Debug: show why talks were filtered out
+                if (items.length !== talks.length) {
+                    const filtered_out = items.filter(i => !isValidSpeechInRange(i, dateFromTs, dateTillTs));
+                    filtered_out.slice(0, 3).forEach(talk => {
+                        console.log(`   ❌ Filtered by date: "${talk.title.substring(0, 40)}" (ID: ${talk.id}) → Date: ${new Date(talk.date * 1000).toISOString()}`);
+                    });
+                }
                 
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
