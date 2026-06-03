@@ -216,140 +216,141 @@ const SettingsManager = {
     STORAGE_KEY_FORMATS: 'tm_event_formats',
     DEFAULT_FORMATS: ['Тільки онлайн', 'Офлайн зі стрімом'],
     DEFAULT_TAGS: [
-		'[24]/7.ai',
-		'Additive Machine Learning Models',
-		'Adoption of GenAI in SDLC',
-		'AI',
-		'AI & ML Strategy',
-		'AI Agents',
-		'AI Agents Testing',
-		'AI Architecture',
-		'AI Architectures',
-		'AI DIAL',
-		'AI Ethics',
-		'AI for Good',
-		'AI Governance',
-		'AI in Design',
-		'AI in Test Automation',
-		'AI Platform Deep Learning Containers',
-		'AI Platform Notebooks',
-		'AI Platform Pipelines',
-		'AI Platform Predictions',
-		'AI Platform Training',
-		'AI Pre-Sales',
-		'AI Security',
-		'AI Strategy',
-		'AI Strategy and Leadership',
-		'AI, Data Science, and Statistics',
-		'AI/ML Testing',
-		'Alita',
-		'Amazon Augmented AI',
-		'Amazon ML',
-		'Apache Marvin-AI',
-		'Apple Core ML',
-		'Applied GenAI for SDLC Efficiency',
-		'Artificial General Intelligence (AGI)',
-		'Artificial intelligence',
-		'Artificial intelligence systems',
-		'Artificial Superintelligence (ASI)',
-		'AT/Generative AI',
-		'AWS Copilot',
-		'AWS.Machine Learning',
-		'Azure AI + Machine Learning',
-		'Azure AI Language',
-		'Azure AI Search',
-		'Azure Applied AI Services',
-		'Azure Machine Learning Studio',
-		'Azure OpenAI Service',
-		'BI Analysis with AI',
-		'BigQuery ML',
-		'boost.ai',
-		'Business Prompt Engineering',
-		'ChatGPT',
-		'Classification Metrics for Machine Learning',
-		'Conversational AI',
-		'Create ML',
-		'Data & AI Consulting',
-		'Data & AI Strategy',
-		'Data Visualization in ML',
-		'Domain Cases for GenAI in Software Solutions',
-		'ELITEA',
-		'EPAM GenAI Offerings',
-		'EPAM GenAI SDLC Offerings',
-		'EPAM GenAI Solutions Offering',
-		'Ethics of AI',
-		'GCP AI and Machine Learning',
-		'Gen AI Application Development',
-		'Gen AI in Management',
-		'Gen AI in SDLC',
-		'Gen AI in Test Automation',
-		'Gen AI ROI',
-		'Gen AI Solutions Development',
-		'GenAI Application Development',
-		'GenAI Business Analysis',
-		'GenAI Data Management',
-		'GenAI for BA Productivity',
-		'GenAI for Requirement Management',
-		'GenAI Mastery for Management',
-		'GenAI Model Systems Engineering',
-		'GenAI Pair Programming',
-		'GenAI Product Management',
-		'GenAI Prototyping',
-		'GenAI Solutions Development',
-		'GenAI Tech Stack',
-		'GenAI Technology Infrastructure',
-		'GenAI Toolset for SDLC',
-		'Generative AI',
-		'Generative AI Fundamentals',
-		'Generative AI Technologies',
-		'Generative Pre-trained Transformers (GPT)',
-		'Github Copilot',
-		'GitHub Copilot (Tool)',
-		'Google AI Hub',
-		'Google Cloud AI Platform',
-		'Google Cloud Auto ML',
-		'Google Contact Center AI',
-		'Google Document AI',
-		'Google Vertex AI',
-		'HCI AI',
-		'Invocation of GenAI from Code',
-		'Kontent.ai',
-		'Kore.ai',
-		'Large Language Model (LLM)',
-		'Machine Learning',
-		'Machine Learning Bias',
-		'Machine Learning Engineering',
-		'Machine Learning Model Development',
-		'Machine Learning on Graph Data',
-		'Machine Learning Tools',
-		'Machine Learning with Data',
-		'Microsoft 365 Copilot',
-		'Microsoft Copilot',
-		'Microsoft Copilot Studio',
-		'ML Architecture',
-		'ML.NET',
-		'MLflow',
-		'MLOps',
-		'NVIDIA AI platform',
-		'OpenAI API',
-		'OpenAI GPT-4o',
-		'Power Platform AI Builder',
-		'Prompt Engineering',
-		'Prompt Engineering for Dev Productivity',
-		'Prompt Engineering for TA',
-		'Quantum Machine Learning (QML)',
-		'Regression Metrics for Machine Learning',
-		'Salesforce Einstein GPT',
-		'SAP AI',
-		'SAP AI Core',
-		'SAP Machine Learning',
-		'Spark ML',
-		'Spark MLlib',
-		'Spring AI',
-		'TelescopeAI',
-		'TelescopeAI Perf',
-		'TONIC AI'
-	],
+
+        'AI',
+        'AI & ML Strategy',
+        'AI Agents',
+        'AI Agents Testing',
+        'AI Architecture',
+        'AI Architectures',
+        'AI DIAL',
+        'AI Ethics',
+        'AI Governance',
+        'AI Platform Deep Learning Containers',
+        'AI Platform Notebooks',
+        'AI Platform Pipelines',
+        'AI Platform Predictions',
+        'AI Platform Training',
+        'AI Pre-Sales',
+        'AI Security',
+        'AI Strategy',
+        'AI Strategy and Leadership',
+        'AI for Good',
+        'AI in Design',
+        'AI in Test Automation',
+        'AI, Data Science, and Statistics',
+        'AI/ML Testing',
+        'AT/Generative AI',
+        'AWS Copilot',
+        'AWS.Machine Learning',
+        'Additive Machine Learning Models',
+        'Adoption of GenAI in SDLC',
+        'Alita',
+        'Amazon Augmented AI',
+        'Amazon ML',
+        'Apache Marvin-AI',
+        'Apple Core ML',
+        'Applied GenAI for SDLC Efficiency',
+        'Artificial General Intelligence (AGI)',
+        'Artificial Superintelligence (ASI)',
+        'Artificial intelligence',
+        'Artificial intelligence systems',
+        'Azure AI + Machine Learning',
+        'Azure AI Language',
+        'Azure AI Search',
+        'Azure Applied AI Services',
+        'Azure Machine Learning Studio',
+        'Azure OpenAI Service',
+        'BI Analysis with AI',
+        'BigQuery ML',
+        'Business Prompt Engineering',
+        'ChatGPT',
+        'Classification Metrics for Machine Learning',
+        'Conversational AI',
+        'Create ML',
+        'Data & AI Consulting',
+        'Data & AI Strategy',
+        'Data Visualization in ML',
+        'Domain Cases for GenAI in Software Solutions',
+        'ELITEA',
+        'EPAM GenAI Offerings',
+        'EPAM GenAI SDLC Offerings',
+        'EPAM GenAI Solutions Offering',
+        'Ethics of AI',
+        'GCP AI and Machine Learning',
+        'Gen AI Application Development',
+        'Gen AI ROI',
+        'Gen AI Solutions Development',
+        'Gen AI in Management',
+        'Gen AI in SDLC',
+        'Gen AI in Test Automation',
+        'GenAI Application Development',
+        'GenAI Business Analysis',
+        'GenAI Data Management',
+        'GenAI Mastery for Management',
+        'GenAI Model Systems Engineering',
+        'GenAI Pair Programming',
+        'GenAI Product Management',
+        'GenAI Prototyping',
+        'GenAI Solutions Development',
+        'GenAI Tech Stack',
+        'GenAI Technology Infrastructure',
+        'GenAI Toolset for SDLC',
+        'GenAI for BA Productivity',
+        'GenAI for Requirement Management',
+        'Generative AI',
+        'Generative AI Fundamentals',
+        'Generative AI Technologies',
+        'Generative Pre-trained Transformers (GPT)',
+        'GitHub Copilot (Tool)',
+        'Github Copilot',
+        'Google AI Hub',
+        'Google Cloud AI Platform',
+        'Google Cloud Auto ML',
+        'Google Contact Center AI',
+        'Google Document AI',
+        'Google Vertex AI',
+        'HCI AI',
+        'Invocation of GenAI from Code',
+        'Kontent.ai',
+        'Kore.ai',
+        'Large Language Model (LLM)',
+        'ML Architecture',
+        'ML.NET',
+        'MLOps',
+        'MLflow',
+        'Machine Learning',
+        'Machine Learning Bias',
+        'Machine Learning Engineering',
+        'Machine Learning Model Development',
+        'Machine Learning Tools',
+        'Machine Learning on Graph Data',
+        'Machine Learning with Data',
+        'Microsoft 365 Copilot',
+        'Microsoft Copilot',
+        'Microsoft Copilot Studio',
+        'NVIDIA AI platform',
+        'OpenAI API',
+        'OpenAI GPT-4o',
+        'Power Platform AI Builder',
+        'Prompt Engineering',
+        'Prompt Engineering for Dev Productivity',
+        'Prompt Engineering for TA',
+        'Quantum Machine Learning (QML)',
+        'Regression Metrics for Machine Learning',
+        'SAP AI',
+        'SAP AI Core',
+        'SAP Machine Learning',
+        'Salesforce Einstein GPT',
+        'Spark ML',
+        'Spark MLlib',
+        'Spring AI',
+        'TONIC AI',
+        'TelescopeAI',
+        'TelescopeAI Perf',
+        '[24]/7.ai',
+        'boost.ai'
+    ],
 
     getTags() {
         const stored = GM_getValue(this.STORAGE_KEY);
@@ -372,6 +373,136 @@ const SettingsManager = {
     reset() {
         GM_setValue(this.STORAGE_KEY, '');
         GM_setValue(this.STORAGE_KEY_FORMATS, '');
+    }
+};
+
+// ─── Tags Manager ────────────────────────────────────────────────────────────
+/**
+ * TagsManager: Centralized management of user-selected tags
+ * Handles current selections, dropdown state, and merging of search results with selections
+ */
+const TagsManager = {
+    // Current user selections in memory
+    currentTags: [],
+
+    // Checkboxes currently visible in dropdown
+    tagCheckboxes: {},
+
+    // All available tags (for when search is cleared)
+    allOptions: [],
+
+    /**
+     * Initialize TagsManager with saved tags from storage
+     */
+    init() {
+        this.currentTags = SettingsManager.getTags();
+        this.allOptions = [...this.currentTags];
+        this.tagCheckboxes = {};
+    },
+
+    /**
+     * Get all currently selected tags
+     * @returns {Array<string>} Array of selected tag names
+     */
+    getSelected() {
+        return [...this.currentTags];
+    },
+
+    /**
+     * Get tags that are checked in current dropdown view
+     * @returns {Array<string>} Array of checked tag names
+     */
+    getCheckedInDropdown() {
+        return Object.entries(this.tagCheckboxes)
+            .filter(([_, cb]) => cb.checked)
+            .map(([tag, _]) => tag);
+    },
+
+    /**
+     * Get tags that are selected but NOT in current dropdown
+     * (useful for preserving selections when searching)
+     * @returns {Array<string>} Array of tag names outside dropdown
+     */
+    getTagsOutsideDropdown() {
+        return this.currentTags.filter(tag => !this.tagCheckboxes[tag]);
+    },
+
+    /**
+     * Merge checked dropdown items with tags outside dropdown
+     * Preserves all selections while allowing new selections
+     * @returns {Array<string>} Merged array of all selected tags
+     */
+    getMergedSelection() {
+        const checkedInDropdown = this.getCheckedInDropdown();
+        const tagsOutsideDropdown = this.getTagsOutsideDropdown();
+        return [...new Set([...checkedInDropdown, ...tagsOutsideDropdown])];
+    },
+
+    /**
+     * Update current selections in memory
+     * @param {Array<string>} tags - New tag selections
+     */
+    setSelected(tags) {
+        this.currentTags.length = 0;
+        this.currentTags.push(...tags);
+    },
+
+    /**
+     * Update dropdown options (for when search is cleared)
+     * @param {Array<string>} options - Available options
+     */
+    setAllOptions(options) {
+        this.allOptions = [...options];
+    },
+
+    /**
+     * Clear all checkbox references (when dropdown is rerendered)
+     */
+    clearCheckboxes() {
+        Object.keys(this.tagCheckboxes).forEach(k => { delete this.tagCheckboxes[k]; });
+    },
+
+    /**
+     * Clear all selections (for "Unselect All" button)
+     */
+    clearAll() {
+        this.currentTags.length = 0;
+        this.allOptions = [];
+        this.clearCheckboxes();
+    },
+
+    /**
+     * Reset to default tags
+     */
+    resetToDefaults() {
+        this.setSelected(SettingsManager.DEFAULT_TAGS);
+        this.setAllOptions(SettingsManager.DEFAULT_TAGS);
+    },
+
+    /**
+     * Check if tag exists in current dropdown view
+     * @param {string} tag - Tag name
+     * @returns {boolean}
+     */
+    isInDropdown(tag) {
+        return tag in this.tagCheckboxes;
+    },
+
+    /**
+     * Check if tag is currently selected
+     * @param {string} tag - Tag name
+     * @returns {boolean}
+     */
+    isSelected(tag) {
+        return this.currentTags.includes(tag);
+    },
+
+    /**
+     * Get count of selected tags
+     * @returns {number}
+     */
+    getSelectedCount() {
+        return this.currentTags.length;
     }
 };
 
@@ -558,7 +689,7 @@ function createSettingsUIHtml() {
 }
 
 function attachSettingsHandlers() {
-    const currentTags = SettingsManager.getTags();
+    TagsManager.init();
     const searchInput = document.getElementById('tm-settings-search');
     const dropdown = document.getElementById('tm-settings-dropdown');
     const selectedList = document.getElementById('tm-settings-selected');
@@ -570,73 +701,70 @@ function attachSettingsHandlers() {
 
     if (!searchInput || !dropdown || !saveBtn || !defaultsBtn || !unselectAllBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
 
-    const tagCheckboxes = {};
-    let allOptions = [...currentTags];
+    async function updateDropdown(query) {
+        dropdown.innerHTML = '';
+        TagsManager.clearCheckboxes();
+        let options = [];
 
-      async function updateDropdown(query) {
-          dropdown.innerHTML = '';
-          Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
-          let options = [];
+        if (query.trim()) {
+            // Search mode: LEFT JOIN search results with current selections
+            // Show search results, highlight those already selected
+            try {
+                const results = await gmGet(
+                    `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
+                );
+                if (Array.isArray(results)) {
+                    // Display only search results; checked state determined by TagsManager.currentTags
+                    options = [...new Set(results)];
+                }
+            } catch (err) {
+                console.error('Tag search failed:', err);
+            }
+        } else {
+            // Empty search: show all currently selected tags
+            options = [...TagsManager.allOptions];
+        }
 
-           if (query.trim()) {
-               // Search mode: LEFT JOIN search results with current selections
-               // Show search results, highlight those already selected
-               try {
-                   const results = await gmGet(
-                       `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
-                   );
-                   if (Array.isArray(results)) {
-                       // Display only search results; checked state determined by currentTags
-                       options = [...new Set(results)];
-                   }
-               } catch (err) {
-                   console.error('Tag search failed:', err);
-               }
-          } else {
-              // Empty search: show all currently selected tags
-              options = [...allOptions];
-          }
+        options = [...new Set(options)].sort();
 
-          options = [...new Set(options)].sort();
+        options.forEach(tag => {
+            const label = document.createElement('label');
+            Object.assign(label.style, {
+                display: 'block',
+                padding: `${SPACING.MD} ${SPACING.LG}`,
+                cursor: 'pointer',
+                borderBottom: `1px solid ${COLORS.VERY_LIGHT_BORDER}`,
+            });
 
-         options.forEach(tag => {
-             const label = document.createElement('label');
-             Object.assign(label.style, {
-                 display: 'block',
-                 padding: `${SPACING.MD} ${SPACING.LG}`,
-                 cursor: 'pointer',
-                 borderBottom: `1px solid ${COLORS.VERY_LIGHT_BORDER}`,
-             });
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = tag;
+            // LEFT JOIN: Mark checked if tag already in user's current selections
+            checkbox.checked = TagsManager.isSelected(tag);
+            TagsManager.tagCheckboxes[tag] = checkbox;
 
-              const checkbox = document.createElement('input');
-              checkbox.type = 'checkbox';
-              checkbox.value = tag;
-              // LEFT JOIN: Mark checked if tag already in user's current selections
-              checkbox.checked = currentTags.includes(tag);
-              tagCheckboxes[tag] = checkbox;
+            // Update save button state and chips on any change
+            checkbox.addEventListener('change', () => {
+                updateSaveButtonState();
+                updateSelectedChips();
+            });
 
-             // Update save button state and chips on any change
-             checkbox.addEventListener('change', () => {
-                 updateSaveButtonState();
-                 updateSelectedChips();
-             });
+            const span = document.createElement('span');
+            span.textContent = escHtml(tag);
+            Object.assign(span.style, { marginLeft: SPACING.LG });
 
-             const span = document.createElement('span');
-             span.textContent = escHtml(tag);
-             Object.assign(span.style, { marginLeft: SPACING.LG });
-
-             label.appendChild(checkbox);
-             label.appendChild(span);
-             dropdown.appendChild(label);
-         });
-         updateSaveButtonState();
-         attachChipRemoveHandlers();
-     }
+            label.appendChild(checkbox);
+            label.appendChild(span);
+            dropdown.appendChild(label);
+        });
+        updateSaveButtonState();
+        attachChipRemoveHandlers();
+    }
 
     searchInput.addEventListener('input', e => updateDropdown(e.target.value));
 
     function updateSaveButtonState() {
-        const selectedTags = Object.values(tagCheckboxes).filter(cb => cb.checked).length;
+        const selectedTags = Object.values(TagsManager.tagCheckboxes).filter(cb => cb.checked).length;
         const isValid = selectedTags > 0;
 
         if (isValid) {
@@ -652,16 +780,12 @@ function attachSettingsHandlers() {
         }
     }
 
-     function updateSelectedChips() {
-         const checkedTags = Object.entries(tagCheckboxes)
-             .filter(([_, cb]) => cb.checked)
-             .map(([tag, _]) => tag);
-         // Update currentTags to reflect current selections
-         currentTags.length = 0;
-         currentTags.push(...checkedTags);
-         selectedList.innerHTML = chipHtml(checkedTags);
-         attachChipRemoveHandlers();
-     }
+    function updateSelectedChips() {
+        const allSelected = TagsManager.getMergedSelection();
+        TagsManager.setSelected(allSelected);
+        selectedList.innerHTML = chipHtml(allSelected);
+        attachChipRemoveHandlers();
+    }
 
     function attachChipRemoveHandlers() {
         const removeButtons = document.querySelectorAll('.chip-remove-btn');
@@ -673,9 +797,9 @@ function attachSettingsHandlers() {
                 const chip = btn.parentElement;
                 const tagName = chip.getAttribute('data-tag');
 
-                // Uncheck the checkbox if it exists in tagCheckboxes
-                if (tagCheckboxes[tagName]) {
-                    tagCheckboxes[tagName].checked = false;
+                // Uncheck the checkbox if it exists in TagsManager
+                if (TagsManager.isInDropdown(tagName)) {
+                    TagsManager.tagCheckboxes[tagName].checked = false;
                 }
 
                 // Update both chips and button state
@@ -686,9 +810,8 @@ function attachSettingsHandlers() {
     }
 
     saveBtn.onclick = () => {
-        const selected = Object.entries(tagCheckboxes)
-            .filter(([_, cb]) => cb.checked)
-            .map(([tag, _]) => tag);
+        const selected = TagsManager.getMergedSelection();
+
         // Only allow save if at least one tag
         if (selected.length === 0) {
             return;
@@ -696,9 +819,8 @@ function attachSettingsHandlers() {
 
         // Save tags to storage
         SettingsManager.setTags(selected);
-        currentTags.length = 0;
-        currentTags.push(...selected);
-        allOptions = [...selected]; // fix: ensure allOptions matches latest selection
+        TagsManager.setSelected(selected);
+        TagsManager.setAllOptions(selected);
         updateDropdown('');
         selectedList.innerHTML = chipHtml(selected);
 
@@ -723,15 +845,15 @@ function attachSettingsHandlers() {
         SettingsManager.setTags(SettingsManager.DEFAULT_TAGS);
         SettingsManager.setFormats(SettingsManager.DEFAULT_FORMATS);
 
-        // Update in-memory currentTags
-        currentTags.length = 0;
-        currentTags.push(...SettingsManager.DEFAULT_TAGS);
-        allOptions = [...SettingsManager.DEFAULT_TAGS]; // fix: ensure allOptions matches defaults
+        // Update TagsManager
+        TagsManager.resetToDefaults();
         updateDropdown('');
+
         // Reset formats
         formatOnlineCheckbox.checked = true;
         formatOfflineStreamCheckbox.checked = true;
         selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
+
         // Confirmation feedback
         const originalText = defaultsBtn.textContent;
         defaultsBtn.textContent = '✓ Defaults Loaded';
@@ -744,30 +866,28 @@ function attachSettingsHandlers() {
         }, 1500);
     };
 
-     unselectAllBtn.onclick = () => {
-         Object.values(tagCheckboxes).forEach(cb => { cb.checked = false; });
-         formatOnlineCheckbox.checked = false;
-         formatOfflineStreamCheckbox.checked = false;
-         selectedList.innerHTML = '';
-         // ✅ FIX: Clear currentTags and allOptions to prevent old selections from reappearing
-         currentTags.length = 0;
-         allOptions = [];
-         updateSaveButtonState();
-         // Confirmation feedback
-         const originalText = unselectAllBtn.textContent;
-         unselectAllBtn.textContent = '✓ Cleared';
-         unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
-         unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
-         setTimeout(() => {
-             unselectAllBtn.textContent = originalText;
-             unselectAllBtn.style.background = COLORS.WHITE;
-             unselectAllBtn.style.color = COLORS.TEXT_GRAY;
-         }, 1500);
-     };
+    unselectAllBtn.onclick = () => {
+        TagsManager.clearAll();
+        formatOnlineCheckbox.checked = false;
+        formatOfflineStreamCheckbox.checked = false;
+        selectedList.innerHTML = '';
+        updateSaveButtonState();
 
-     updateDropdown('');
-     updateSaveButtonState();
- }
+        // Confirmation feedback
+        const originalText = unselectAllBtn.textContent;
+        unselectAllBtn.textContent = '✓ Cleared';
+        unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
+        unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
+        setTimeout(() => {
+            unselectAllBtn.textContent = originalText;
+            unselectAllBtn.style.background = COLORS.WHITE;
+            unselectAllBtn.style.color = COLORS.TEXT_GRAY;
+        }, 1500);
+    };
+
+    updateDropdown('');
+    updateSaveButtonState();
+}
 
 function gmGet(url) {
     return new Promise((resolve, reject) => {
