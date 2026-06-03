@@ -573,30 +573,30 @@ function attachSettingsHandlers() {
     const tagCheckboxes = {};
     let allOptions = [...currentTags];
 
-     async function updateDropdown(query) {
-         dropdown.innerHTML = '';
-         Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
-         let options = allOptions;
+      async function updateDropdown(query) {
+          dropdown.innerHTML = '';
+          Object.keys(tagCheckboxes).forEach(k => { delete tagCheckboxes[k]; }); // fixes ESLint - do not reassign const
+          let options = [];
 
-         if (query.trim()) {
-             // Search mode: merge API results with current selections
-             try {
-                 const results = await gmGet(
-                     `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
-                 );
-                 if (Array.isArray(results)) {
-                     // Merge search results with currently selected tags to avoid loss
-                     options = [...new Set([...currentTags, ...results])];
-                 }
-             } catch (err) {
-                 console.error('Tag search failed:', err);
-             }
-         } else {
-             // Empty search: show all currently selected tags
-             options = allOptions;
-         }
+          if (query.trim()) {
+              // Search mode: fetch API results and merge with current selections
+              try {
+                  const results = await gmGet(
+                      `https://wearecommunity.io/api/v2/dictionaries/skills/search?search_query=${encodeURIComponent(query)}`
+                  );
+                  if (Array.isArray(results)) {
+                      // Merge search results with currently selected tags to avoid loss
+                      options = [...new Set([...currentTags, ...results])];
+                  }
+              } catch (err) {
+                  console.error('Tag search failed:', err);
+              }
+          } else {
+              // Empty search: show all currently selected tags
+              options = [...allOptions];
+          }
 
-         options = [...new Set(options)].sort();
+          options = [...new Set(options)].sort();
 
          options.forEach(tag => {
              const label = document.createElement('label');
@@ -743,23 +743,26 @@ function attachSettingsHandlers() {
         }, 1500);
     };
 
-    unselectAllBtn.onclick = () => {
-        Object.values(tagCheckboxes).forEach(cb => { cb.checked = false; });
-        formatOnlineCheckbox.checked = false;
-        formatOfflineStreamCheckbox.checked = false;
-        selectedList.innerHTML = '';
-        updateSaveButtonState();
-        // Confirmation feedback
-        const originalText = unselectAllBtn.textContent;
-        unselectAllBtn.textContent = '✓ Cleared';
-        unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
-        unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
-        setTimeout(() => {
-            unselectAllBtn.textContent = originalText;
-            unselectAllBtn.style.background = COLORS.WHITE;
-            unselectAllBtn.style.color = COLORS.TEXT_GRAY;
-        }, 1500);
-    };
+     unselectAllBtn.onclick = () => {
+         Object.values(tagCheckboxes).forEach(cb => { cb.checked = false; });
+         formatOnlineCheckbox.checked = false;
+         formatOfflineStreamCheckbox.checked = false;
+         selectedList.innerHTML = '';
+         // ✅ FIX: Clear currentTags and allOptions to prevent old selections from reappearing
+         currentTags.length = 0;
+         allOptions = [];
+         updateSaveButtonState();
+         // Confirmation feedback
+         const originalText = unselectAllBtn.textContent;
+         unselectAllBtn.textContent = '✓ Cleared';
+         unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
+         unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
+         setTimeout(() => {
+             unselectAllBtn.textContent = originalText;
+             unselectAllBtn.style.background = COLORS.WHITE;
+             unselectAllBtn.style.color = COLORS.TEXT_GRAY;
+         }, 1500);
+     };
 
      updateDropdown('');
      updateSaveButtonState();
@@ -771,11 +774,15 @@ function gmGet(url) {
             method: 'GET',
             url,
             headers: { Accept: 'application/json' },
-             onload(r) {
-                 try { resolve(JSON.parse(r.responseText)); }
-                 catch (_) { /* eslint-disable-line no-unused-vars */ reject(new Error('JSON parse error: ' + url)); }
-             },
-             onerror() { reject(new Error('Network error: ' + url)); },
+            onload: function (response) {
+                try {
+                    console.log("Status:", response.status);
+                    console.log("Response Text:", response.responseText);
+                    return resolve(JSON.parse(response.responseText));
+                }
+                catch (_) { /* eslint-disable-line no-unused-vars */ reject(new Error('JSON parse error: ' + url)); }
+            },
+             onerror: function () { reject(new Error('Network error: ' + url)); },
         });
     });
 }
@@ -790,10 +797,10 @@ async function fetchAllEvents(dateFrom, dateTill) {
     const till = encodeURIComponent(toAPIDate(dateTill));
     const tags = SettingsManager.getTags();
     const formats = SettingsManager.getFormats();
-    
+
     const tagParams = buildArrayParam('tag', tags);
     const formatParams = buildArrayParam('event_participation_format', formats);
-    
+
     const base =
         `https://wearecommunity.io/api/v2/events.json?period=upcoming` +
         tagParams +
