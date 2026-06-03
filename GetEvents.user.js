@@ -89,6 +89,18 @@ function isValidSpeechInRange(talk, dateFromTs, dateTillTs) {
 
 function isLanguageBlocked(language) {
     if (!language) return false;
+    
+    // Check if language string contains comma (like "En, Ru, Arm")
+    if (language.includes(',')) {
+        // Split by comma and check if ANY part is blocked
+        const languages = language.split(',').map(l => l.trim());
+        return languages.some(lang => 
+            LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(lang) || 
+            LANGUAGE_FILTERS.BLOCKED_CODES.includes(lang)
+        );
+    }
+    
+    // Single language check
     if (LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(language)) return true;
     if (LANGUAGE_FILTERS.BLOCKED_CODES.includes(language)) return true;
     return false;
@@ -1032,7 +1044,12 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
             const items = agendaData && agendaData.agenda && agendaData.agenda.items;
             if (items) {
                 const talks = items.filter(i => isValidSpeechInRange(i, dateFromTs, dateTillTs));
-                talks.forEach(talk => {
+                // Filter talks by language BEFORE adding to allItems
+                const allowedTalks = talks.filter(talk => {
+                    const talkLang = talk.short_language || getLang(e);
+                    return !isLanguageBlocked(talkLang);
+                });
+                allowedTalks.forEach(talk => {
                     allItems.push({ type: 'talk', event: e, talk: talk, sortDate: talk.date, title: talk.title });
                 });
             }
@@ -1074,25 +1091,16 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
             mergedBlocks.push({ type: 'single', event: item.event });
         }
     });
-    // Flatten groups, order by min date - FILTER TALKS AND SKIP EMPTY SERIES
+    // Flatten groups, order by min date
     Object.values(grouped)
         .sort((g1, g2) => g1.talks[0].date - g2.talks[0].date)
         .forEach(group => {
-            // Filter out talks with blocked languages
-            const allowedTalks = group.talks.filter(talk => {
-                const talkLang = talk.short_language || getLang(group.event);
-                return !isLanguageBlocked(talkLang);
-            });
-
-            // Skip entire series if no talks remain after filtering
-            if (allowedTalks.length === 0) return;
-
-            if (allowedTalks.length === 1) {
+            if (group.talks.length === 1) {
                 // Render as single talk (series, but only one on this date)
-                mergedBlocks.push({ type: 'singleTalk', event: group.event, talk: allowedTalks[0] });
+                mergedBlocks.push({ type: 'singleTalk', event: group.event, talk: group.talks[0] });
             } else {
                 // Render as series group
-                mergedBlocks.push({ type: 'seriesGroup', event: group.event, talks: allowedTalks });
+                mergedBlocks.push({ type: 'seriesGroup', event: group.event, talks: group.talks });
             }
         });
 
