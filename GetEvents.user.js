@@ -1032,11 +1032,13 @@ function eventPageUrl(event) {
 function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     if (!events.length) return '<p>Подій не знайдено.</p>';
 
+    const dateRangeEnd = dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
     console.log(`📊 [renderEvents] Starting with ${events.length} events`);
     console.log(`📊 [LANGUAGE_FILTERS] BLOCKED_LANGUAGES: ${JSON.stringify(LANGUAGE_FILTERS.BLOCKED_LANGUAGES)}, BLOCKED_CODES: ${JSON.stringify(LANGUAGE_FILTERS.BLOCKED_CODES)}`);
+    console.log(`📊 [DATE_RANGE] ${new Date(dateFromTs * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} to ${new Date(dateRangeEnd * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} (ts: ${dateFromTs} to ${dateRangeEnd})`);
 
     const filtered = events.filter(e => {
-        if (e.size === 's') return e.time_stamp.start >= dateFromTs && e.time_stamp.start <= dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
+        if (e.size === 's') return e.time_stamp.start >= dateFromTs && e.time_stamp.start <= dateRangeEnd;
         return true;
     });
 
@@ -1055,15 +1057,16 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
             const items = agendaData && agendaData.agenda && agendaData.agenda.items;
             if (items) {
                 const talks = items.filter(i => isValidSpeechInRange(i, dateFromTs, dateTillTs));
+                const dateRangeEnd = dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
                 console.log(`📊 [Series Event] "${e.title.substring(0, 40)}" (ID: ${e.id}) → Total talks in date range: ${talks.length}`);
-                console.log(`   📋 Date range filter: ${new Date(dateFromTs * 1000).toISOString()} to ${new Date(dateTillTs * 1000).toISOString()}`);
+                console.log(`   📋 Date range: ${new Date(dateFromTs * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} to ${new Date(dateRangeEnd * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} (including +1 day)`);
                 console.log(`   📋 All talks in event: ${agendaMap[e.id]?.agenda?.items?.length || 0}`);
                 
                 // Debug: show why talks were filtered out
                 if (items.length !== talks.length) {
                     const filtered_out = items.filter(i => !isValidSpeechInRange(i, dateFromTs, dateTillTs));
                     filtered_out.slice(0, 3).forEach(talk => {
-                        console.log(`   ❌ Filtered by date: "${talk.title.substring(0, 40)}" (ID: ${talk.id}) → Date: ${new Date(talk.date * 1000).toISOString()}`);
+                        console.log(`   ❌ Filtered by date: "${talk.title.substring(0, 40)}" (ID: ${talk.id}) → Date: ${new Date(talk.date * TIME_CONSTANTS.MS_PER_SECOND).toISOString()} (ts: ${talk.date})`);
                     });
                 }
                 
