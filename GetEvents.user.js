@@ -1180,7 +1180,7 @@ function renderTalk(event, talk) {
         `<div>`,
         `<div>${fmtDate(talk.date)}, ${timeRange}</div>`,
         seriesEventLink(seriesLink, event.title),
-        `<div style="font-weight:600;margin-top:2px;"><a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
+        `<div style="font-weight:600;margin-top:2px;">TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
         `<div>Мова: ${lang}</div>`,
         `</div>`,
     ].join('\n');
