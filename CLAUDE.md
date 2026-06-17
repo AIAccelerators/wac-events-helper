@@ -46,3 +46,8 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 - `gmGet(url)` — wraps `GM_xmlhttpRequest` in a Promise; all network calls go through it.
 - Dates displayed in Ukrainian locale using hard-coded day/month arrays (`UA_DAYS`, `UA_MONTHS`), not `Intl`.
 - HTML generation separated from listener attachment (e.g., `createSettingsUIHtml()` + `attachSettingsHandlers()`).
+- Rendering functions return HTML as array of strings, joined at the end with `\n` (e.g., `renderSeriesGroup()`, `renderSingle()`, `renderTalk()`).
+- Language fallback: `talk.short_language || getLang(event)` (prefer talk's language, fall back to event's language).
+- **Security:** All user content (titles, URLs, language values) must be escaped with `escHtml()` to prevent XSS.
+- Helper functions that support rendering should be defined immediately before the rendering function that uses them.
+- For conditional display logic (e.g., same language vs. mixed): use `if/else` branches within the rendering function, not separate render functions.
