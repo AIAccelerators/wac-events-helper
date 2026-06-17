@@ -1149,14 +1149,31 @@ function renderSeriesGroup(event, talks) {
         seriesEventLink(seriesLink, event.title),
     ];
 
+    const hasUniformLanguage = allTalksHaveSameLanguage(event, talks);
+    const commonLanguage = hasUniformLanguage ? (talks[0].short_language || getLang(event)) : null;
+
     talks.forEach(talk => {
         const timeRange = formatTimeRange(talk.date, talk.date + talk.duration_min * 60);
         const talkUrl = `${eventPageUrl(event)}/talks/${talk.id}`;
-        const talkLang = escHtml(talk.short_language || getLang(event));
-        lines.push(
-            `<div style="padding-left:16px"><b>•</b> ${timeRange}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a> | ${talkLang}</div>`
-        );
+
+        if (hasUniformLanguage) {
+            // All same language: omit inline language tag
+            lines.push(
+                `<div style="padding-left:16px"><b>•</b> ${timeRange}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`
+            );
+        } else {
+            // Mixed languages: keep inline language tag
+            const talkLang = escHtml(talk.short_language || getLang(event));
+            lines.push(
+                `<div style="padding-left:16px"><b>•</b> ${timeRange}: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a> | ${talkLang}</div>`
+            );
+        }
     });
+
+    // Add language footer if uniform
+    if (hasUniformLanguage) {
+        lines.push(`<div>Мова: ${escHtml(commonLanguage)}</div>`);
+    }
 
     lines.push(`</div>`);
     return lines.join('\n');
