@@ -89,17 +89,17 @@ function isValidSpeechInRange(talk, dateFromTs, dateTillTs) {
 
 function isLanguageBlocked(language) {
     if (!language) return false;
-    
+
     // Check if language string contains comma (like "En, Ru, Arm")
     if (language.includes(',')) {
         // Split by comma and check if ANY part is blocked
         const languages = language.split(',').map(l => l.trim());
-        return languages.some(lang => 
-            LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(lang) || 
+        return languages.some(lang =>
+            LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(lang) ||
             LANGUAGE_FILTERS.BLOCKED_CODES.includes(lang)
         );
     }
-    
+
     // Single language check
     if (LANGUAGE_FILTERS.BLOCKED_LANGUAGES.includes(language)) return true;
     if (LANGUAGE_FILTERS.BLOCKED_CODES.includes(language)) return true;
@@ -1045,13 +1045,13 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
             const items = agendaData && agendaData.agenda && agendaData.agenda.items;
             if (items) {
                 const talks = items.filter(i => isValidSpeechInRange(i, dateFromTs, dateTillTs));
-                
+
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
                     const talkLang = talk.short_language || getLang(e);
                     return !isLanguageBlocked(talkLang);
                 });
-                
+
                 allowedTalks.forEach(talk => {
                     allItems.push({ type: 'talk', event: e, talk: talk, sortDate: talk.date, title: talk.title });
                 });
@@ -1127,6 +1127,11 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
         .join(`<hr style="border:none;border-top:1px solid ${COLORS.LIGHT_BORDER};margin:10px 0">`);
 }
 
+function allTalksHaveSameLanguage(event, talks) {
+    if (!talks || talks.length === 0) return true;
+    const firstLang = talks[0].short_language || getLang(event);
+    return talks.every(talk => (talk.short_language || getLang(event)) === firstLang);
+}
 
 // ─── Card Wrapper ────────────────────────────────────────────────────────────
 
