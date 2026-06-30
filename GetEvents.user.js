@@ -63,6 +63,11 @@ const LANGUAGE_FILTERS = {
     BLOCKED_CODES: ['Ru'],
 };
 
+const EVENT_FORMATS = {
+    ONLINE_ONLY: 'Тільки онлайн',
+    OFFLINE_WITH_STREAM: 'Офлайн зі стрімом',
+};
+
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
 /* eslint-disable no-unused-vars */
 
@@ -238,7 +243,7 @@ function seriesEventLink(seriesLink, seriesTitle) {
 const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
     STORAGE_KEY_FORMATS: 'tm_event_formats',
-    DEFAULT_FORMATS: ['Тільки онлайн', 'Офлайн зі стрімом'],
+    DEFAULT_FORMATS: [EVENT_FORMATS.ONLINE_ONLY, EVENT_FORMATS.OFFLINE_WITH_STREAM],
     DEFAULT_TAGS: [
 
         'AI',
@@ -701,8 +706,8 @@ function createSettingsUIHtml() {
         <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
         ${settingsHeader('Event Format')}
-        ${checkboxLabel('Тільки онлайн', 'tm-format-online', currentFormats.includes('Тільки онлайн'), SPACING.LG)}
-        ${checkboxLabel('Офлайн зі стрімом', 'tm-format-offline-stream', currentFormats.includes('Офлайн зі стрімом'))}
+        ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY, 'tm-format-online', currentFormats.includes(EVENT_FORMATS.ONLINE_ONLY), SPACING.LG)}
+        ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM, 'tm-format-offline-stream', currentFormats.includes(EVENT_FORMATS.OFFLINE_WITH_STREAM))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Save your selected tags and formats">Save</button>
@@ -862,8 +867,8 @@ function attachSettingsHandlers() {
 
         // Save format selections
         const selectedFormats = [];
-        if (formatOnlineCheckbox.checked) selectedFormats.push('Тільки онлайн');
-        if (formatOfflineStreamCheckbox.checked) selectedFormats.push('Офлайн зі стрімом');
+        if (formatOnlineCheckbox.checked) selectedFormats.push(EVENT_FORMATS.ONLINE_ONLY);
+        if (formatOfflineStreamCheckbox.checked) selectedFormats.push(EVENT_FORMATS.OFFLINE_WITH_STREAM);
         SettingsManager.setFormats(selectedFormats);
 
         // Show feedback
