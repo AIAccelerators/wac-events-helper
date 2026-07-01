@@ -238,6 +238,13 @@ function seriesEventLink(seriesLink, seriesTitle) {
     createUI();
 })();
 
+const LEGACY_FORMAT_MAP = {
+    'Тільки онлайн':          'ONLINE_ONLY',
+    'Online only':             'ONLINE_ONLY',
+    'Офлайн зі стрімом':      'OFFLINE_WITH_STREAM',
+    'Offline with streaming':  'OFFLINE_WITH_STREAM',
+};
+
 // ─── Settings Manager ────────────────────────────────────────────────────────
 
 const SettingsManager = {
@@ -392,7 +399,12 @@ const SettingsManager = {
 
     getFormats() {
         const stored = GM_getValue(this.STORAGE_KEY_FORMATS);
-        return parseJSONSafe(stored, this.DEFAULT_FORMATS, p => Array.isArray(p) && p.length > 0);
+        const parsed = parseJSONSafe(stored, this.DEFAULT_FORMATS, p => Array.isArray(p) && p.length > 0);
+        const migrated = parsed.map(v => LEGACY_FORMAT_MAP[v] ?? v).filter(v => v in EVENT_FORMATS);
+        if (migrated.some((v, i) => v !== parsed[i])) {
+            this.setFormats(migrated);
+        }
+        return migrated;
     },
 
     setFormats(formats) {
