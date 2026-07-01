@@ -718,8 +718,8 @@ function createSettingsUIHtml() {
         <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
         ${settingsHeader('Event Format')}
-        ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY, 'tm-format-online', currentFormats.includes(EVENT_FORMATS.ONLINE_ONLY), SPACING.LG)}
-        ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM, 'tm-format-offline-stream', currentFormats.includes(EVENT_FORMATS.OFFLINE_WITH_STREAM))}
+        ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY.at(0), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
+        ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM.at(0), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Save your selected tags and formats">Save</button>
@@ -879,8 +879,8 @@ function attachSettingsHandlers() {
 
         // Save format selections
         const selectedFormats = [];
-        if (formatOnlineCheckbox.checked) selectedFormats.push(EVENT_FORMATS.ONLINE_ONLY);
-        if (formatOfflineStreamCheckbox.checked) selectedFormats.push(EVENT_FORMATS.OFFLINE_WITH_STREAM);
+        if (formatOnlineCheckbox.checked) selectedFormats.push('ONLINE_ONLY');
+        if (formatOfflineStreamCheckbox.checked) selectedFormats.push('OFFLINE_WITH_STREAM');
         SettingsManager.setFormats(selectedFormats);
 
         // Show feedback
