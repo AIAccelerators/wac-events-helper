@@ -68,6 +68,13 @@ const EVENT_FORMATS = {
     OFFLINE_WITH_STREAM: ['Офлайн зі стрімом', 'Offline with streaming'],
 };
 
+const LEGACY_FORMAT_MAP = {
+    'Тільки онлайн':          'ONLINE_ONLY',
+    'Online only':             'ONLINE_ONLY',
+    'Офлайн зі стрімом':      'OFFLINE_WITH_STREAM',
+    'Offline with streaming':  'OFFLINE_WITH_STREAM',
+};
+
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
 /* eslint-disable no-unused-vars */
 
@@ -238,13 +245,6 @@ function seriesEventLink(seriesLink, seriesTitle) {
     createUI();
 })();
 
-const LEGACY_FORMAT_MAP = {
-    'Тільки онлайн':          'ONLINE_ONLY',
-    'Online only':             'ONLINE_ONLY',
-    'Офлайн зі стрімом':      'OFFLINE_WITH_STREAM',
-    'Offline with streaming':  'OFFLINE_WITH_STREAM',
-};
-
 // ─── Settings Manager ────────────────────────────────────────────────────────
 
 const SettingsManager = {
@@ -401,10 +401,11 @@ const SettingsManager = {
         const stored = GM_getValue(this.STORAGE_KEY_FORMATS);
         const parsed = parseJSONSafe(stored, this.DEFAULT_FORMATS, p => Array.isArray(p) && p.length > 0);
         const migrated = parsed.map(v => LEGACY_FORMAT_MAP[v] ?? v).filter(v => v in EVENT_FORMATS);
-        if (migrated.length !== parsed.length || migrated.some((v, i) => v !== parsed[i])) {
-            this.setFormats(migrated);
+        const result = migrated.length > 0 ? migrated : this.DEFAULT_FORMATS;
+        if (result.length !== parsed.length || result.some((v, i) => v !== parsed[i])) {
+            this.setFormats(result);
         }
-        return migrated;
+        return result;
     },
 
     setFormats(formats) {
