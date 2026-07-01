@@ -64,8 +64,8 @@ const LANGUAGE_FILTERS = {
 };
 
 const EVENT_FORMATS = {
-    ONLINE_ONLY: 'Тільки онлайн',
-    OFFLINE_WITH_STREAM: 'Офлайн зі стрімом',
+    ONLINE_ONLY: ['Тільки онлайн', 'Online only'],
+    OFFLINE_WITH_STREAM: ['Офлайн зі стрімом', 'Offline with streaming'],
 };
 
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
@@ -243,7 +243,7 @@ function seriesEventLink(seriesLink, seriesTitle) {
 const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
     STORAGE_KEY_FORMATS: 'tm_event_formats',
-    DEFAULT_FORMATS: [EVENT_FORMATS.ONLINE_ONLY, EVENT_FORMATS.OFFLINE_WITH_STREAM],
+    DEFAULT_FORMATS: ['ONLINE_ONLY', 'OFFLINE_WITH_STREAM'],
     DEFAULT_TAGS: [
 
         'AI',
