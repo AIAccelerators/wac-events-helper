@@ -976,7 +976,8 @@ async function fetchAllEvents(dateFrom, dateTill) {
     const formats = SettingsManager.getFormats();
 
     const tagParams = buildArrayParam('tag', tags);
-    const formatParams = buildArrayParam('event_participation_format', formats);
+    const allFormatValues = formats.flatMap(key => EVENT_FORMATS[key] ?? []);
+    const formatParams = buildArrayParam('event_participation_format', allFormatValues);
 
     const base =
         `https://wearecommunity.io/api/v2/events.json?period=upcoming` +
