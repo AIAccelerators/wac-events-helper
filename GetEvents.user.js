@@ -64,8 +64,8 @@ const LANGUAGE_FILTERS = {
 };
 
 const EVENT_FORMATS = {
-    ONLINE_ONLY: ['Тільки онлайн', 'Online only'],
-    OFFLINE_WITH_STREAM: ['Офлайн зі стрімом', 'Offline with streaming'],
+    ONLINE_ONLY: ['Тільки онлайн', 'Online only', 'Онлайн'],
+    OFFLINE_WITH_STREAM: ['Офлайн зі стрімом', 'Offline with streaming', 'Офлайн со стримингом'],
 };
 
 const LEGACY_FORMAT_MAP = {
