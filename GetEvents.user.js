@@ -118,7 +118,7 @@ function getPageLocale() {
     return text === 'Укр' ? 'uk' : 'en';
 }
 
-let _locale = 'uk';
+let _locale = 'en';
 
 function setLocale() {
     _locale = getPageLocale();
@@ -757,7 +757,7 @@ async function showSettingsModal() {
 }
 
 function chipHtml(tags) {
-    return tags.map(t => `<span class="tm-chip" data-tag="${escHtml(t)}"><span>${escHtml(t)}</span><button class="chip-remove-btn" title="Remove this tag">&times;</button></span>`).join('');
+    return tags.map(tag => `<span class="tm-chip" data-tag="${escHtml(tag)}"><span>${escHtml(tag)}</span><button class="chip-remove-btn" title="Remove this tag">&times;</button></span>`).join('');
 }
 
 function createSettingsUIHtml() {
@@ -1279,7 +1279,7 @@ function renderTalk(event, talk) {
         `<div>`,
         `<div>${fmtDate(talk.date)}, ${timeRange}</div>`,
         seriesEventLink(seriesLink, event.title),
-        `<div style="font-weight:600;margin-top:2px;">TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
+        `<div style="font-weight:600;margin-top:2px;">${t('talk')} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
         `<div>${t('language')} ${lang}</div>`,
         `</div>`,
     ].join('\n');
