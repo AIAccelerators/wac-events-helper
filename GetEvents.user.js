@@ -637,12 +637,12 @@ function createUI() {
 
     const fromLabel = document.createElement('label');
     Object.assign(fromLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
-    fromLabel.innerHTML = createDateInput('Від:', 'tm-from', toInputDate(today));
+    fromLabel.innerHTML = createDateInput(t('from'), 'tm-from', toInputDate(today));
     dateGroup.appendChild(fromLabel);
 
     const tillLabel = document.createElement('label');
     Object.assign(tillLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
-    tillLabel.innerHTML = createDateInput('До:', 'tm-till', toInputDate(weekLater));
+    tillLabel.innerHTML = createDateInput(t('till'), 'tm-till', toInputDate(weekLater));
     dateGroup.appendChild(tillLabel);
 
     panel.appendChild(dateGroup);
@@ -656,7 +656,7 @@ function createUI() {
 
     const getBtn = document.createElement('button');
     getBtn.id = 'tm-btn';
-    getBtn.textContent = '▶ Get schedule';
+    getBtn.textContent = t('getSchedule');
     Object.assign(getBtn.style, {
         padding: `${SPACING.MD} ${SPACING.XXL}`,
         cursor: 'pointer',
@@ -673,7 +673,7 @@ function createUI() {
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'tm-settings-btn';
-    settingsBtn.textContent = '⚙ Settings';
+    settingsBtn.textContent = t('settings');
     Object.assign(settingsBtn.style, {
         padding: `${SPACING.MD} ${SPACING.XL}`,
         cursor: 'pointer',
@@ -721,8 +721,8 @@ async function onFetch() {
     if (!dateFrom || !dateTill) return;
 
     btn.disabled = true;
-    btn.textContent = 'Loading…';
-    showModal('<p><span class="tm-spinner"></span>Завантаження…</p>', 'events');
+    btn.textContent = t('loading');
+    showModal(`<p><span class="tm-spinner"></span>${t('loading')}</p>`, 'events');
 
     try {
         const events = await fetchAllEvents(dateFrom, dateTill);
@@ -742,10 +742,10 @@ async function onFetch() {
         const dateTillTs = Math.floor(new Date(dateTill).getTime() / 1000);
         updateModalContent(renderEvents(realEvents, agendaMap, dateFromTs, dateTillTs));
     } catch (err) {
-        updateModalContent(`<p style="color:red">Помилка: ${escHtml(err.message)}</p>`);
+        updateModalContent(`<p style="color:${COLORS.ERROR_RED}">${t('error')} ${escHtml(err.message)}</p>`);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Get schedule';
+        btn.textContent = t('getSchedule');
     }
 }
 
@@ -1361,7 +1361,7 @@ function showModal(html, type = 'events') {
     });
 
     const dragHint = document.createElement('span');
-    dragHint.textContent = type === 'settings' ? '⚙ Settings' : '⠿ Events';
+    dragHint.textContent = type === 'settings' ? t('modalSettings') : t('modalEvents');
     Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
 
     const btnStyle = {
@@ -1381,7 +1381,7 @@ function showModal(html, type = 'events') {
     let copyBtn = null;
     if (type === 'events') {
         copyBtn = document.createElement('button');
-        copyBtn.textContent = '📋 Copy';
+        copyBtn.textContent = t('copy');
         Object.assign(copyBtn.style, { ...btnStyle, border: '1px solid #ccc' });
         copyBtn.onclick = async () => {
             const html = content.innerHTML;
@@ -1392,8 +1392,8 @@ function showModal(html, type = 'events') {
                     'text/plain': new Blob([plain], { type: 'text/plain' }),
                 }),
             ]);
-            copyBtn.textContent = '✓ Copied!';
-            setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+            copyBtn.textContent = t('copied');
+            setTimeout(() => { copyBtn.textContent = t('copy'); }, 1500);
         };
         btnGroup.insertBefore(copyBtn, closeBtn);
     }
