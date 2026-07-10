@@ -12,6 +12,7 @@ No build system, no package manager, no dependencies. The `.user.js` file is ins
 
 - **Install/update:** Drag `GetEvents.user.js` into the Tampermonkey dashboard, or open it directly in Chrome/Firefox with Tampermonkey active.
 - **Test:** Navigate to `https://wearecommunity.io/events` with Tampermonkey enabled.
+- **Lint:** `npx eslint GetEvents.user.js` (flat config in `eslint.config.js`; the legacy `.eslintrc.json` is unused but kept in sync).
 - **Version:** Bump `@version` in the userscript header on each release.
 - **`@connect` directive:** Any new API domain must be added to `@connect` in the userscript header or `GM_xmlhttpRequest` calls to it will be blocked.
 
@@ -48,17 +49,25 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 - Code structure: constants + helper functions (lines ~1–150) live in **global scope** before the IIFE; everything else is inside `(function() { ... })()`. New helpers go in global scope; feature logic goes inside the IIFE.
 - All inline styles must use `COLORS`, `SPACING`, and `BORDER_RADIUS` constants — never hardcode color/size values.
 - All CSS classes injected via `GM_addStyle` use the `tm-` prefix (e.g., `tm-btn-primary`, `tm-spinner`) to avoid collisions with page styles.
-- `LANGUAGE_FILTERS` — `BLOCKED_LANGUAGES` / `BLOCKED_CODES` constants control which events/talks are silently dropped (currently blocks Russian). Use `isLanguageBlocked()` for any new language checks.
+- `LANGUAGE_FILTERS` — `BLOCKED_LANGUAGES` / `BLOCKED_CODES` constants control which events/talks are silently dropped (currently blocks Russian). The filter only applies when `_locale === 'uk'`; gate any new `isLanguageBlocked()` call site with `_locale !== 'uk' || !isLanguageBlocked(...)`.
 - `gmGet(url)` — wraps `GM_xmlhttpRequest` in a Promise; all network calls go through it.
 - `buildArrayParam(name, values)` — encodes an array into repeated `&name%5B%5D=value` query params.
 - `parseJSONSafe(stored, default, validator)` — safe JSON parse with fallback; used by `SettingsManager` getters.
-- Dates displayed in Ukrainian locale using hard-coded day/month arrays (`UA_DAYS`, `UA_MONTHS`), not `Intl`.
+- Date arrays (`UA_DAYS`/`UA_MONTHS`, `EN_DAYS`/`EN_MONTHS`) are hardcoded — `Intl` was rejected because Ukrainian requires genitive case. `fmtDate()` selects the pair via `_locale`.
 - HTML generation separated from listener attachment (e.g., `createSettingsUIHtml()` + `attachSettingsHandlers()`).
 - Rendering functions return HTML as array of strings, joined at the end with `\n` (e.g., `renderSeriesGroup()`, `renderSingle()`, `renderTalk()`).
 - Language fallback: `talk.short_language || getLang(event)` (prefer talk's language, fall back to event's language).
 - **Security:** All user content (titles, URLs, language values) must be escaped with `escHtml()` to prevent XSS.
 - Helper functions that support rendering should be defined immediately before the rendering function that uses them.
 - For conditional display logic (e.g., same language vs. mixed): use `if/else` branches within the rendering function, not separate render functions.
+
+### Locale / i18n
+
+- `_locale` — module-level `let` (`'en'|'uk'`), defaults to `'en'`. Set by `setLocale()` which reads `#languageDropdown` (`'Укр'` → `'uk'`, anything else → `'en'`).
+- `setLocale()` must be the first call in every entry point (`createUI`, `onFetch`, `showSettingsModal`) before any rendering or label use.
+- `STRINGS` constant holds all translatable UI strings under `en` and `uk` keys — both must have identical key sets. `t(key)` returns `STRINGS[_locale][key]` with `en` fallback.
+- To add a new label: add it to **both** locale keys in `STRINGS`, then call `t('your_key')` at the use site.
+- Avoid naming callback parameters `t` — it shadows the global `t()` helper (e.g. use `tag`, not `t`, in `.map()` callbacks).
 
 ### Format Constants (`EVENT_FORMATS` / `LEGACY_FORMAT_MAP`)
 
