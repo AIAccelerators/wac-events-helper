@@ -601,6 +601,7 @@ const TagsManager = {
 // ─── UI panel ────────────────────────────────────────────────────────────────
 
 function createUI() {
+    setLocale();
     const today = new Date();
     const weekLater = new Date(today);
     weekLater.setDate(today.getDate() + 6);
@@ -713,6 +714,7 @@ function pad(n) {
 // ─── Fetch logic ─────────────────────────────────────────────────────────────
 
 async function onFetch() {
+    setLocale();
     const btn = document.getElementById('tm-btn');
     const dateFrom = document.getElementById('tm-from').value;
     const dateTill = document.getElementById('tm-till').value;
@@ -748,6 +750,7 @@ async function onFetch() {
 }
 
 async function showSettingsModal() {
+    setLocale();
     const html = createSettingsUIHtml();
     showModal(html, 'settings');
     attachSettingsHandlers();
@@ -1126,7 +1129,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
                     const talkLang = talk.short_language || getLang(e);
-                    return !isLanguageBlocked(talkLang);
+                    return _locale !== 'uk' || !isLanguageBlocked(talkLang);
                 });
 
                 allowedTalks.forEach(talk => {
@@ -1167,7 +1170,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     // singles sorted in - FILTER OUT BLOCKED LANGUAGES
     singles.forEach(item => {
         const eventLang = getLang(item.event);
-        if (!isLanguageBlocked(eventLang)) {
+        if (_locale !== 'uk' || !isLanguageBlocked(eventLang)) {
             mergedBlocks.push({ type: 'single', event: item.event });
         }
     });
