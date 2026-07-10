@@ -75,8 +75,58 @@ const LEGACY_FORMAT_MAP = {
     'Offline with streaming':  'OFFLINE_WITH_STREAM',
 };
 
+const STRINGS = {
+    en: {
+        from: 'From:', till: 'To:',
+        getSchedule: '▶ Get schedule', settings: '⚙ Settings',
+        loading: 'Loading…', error: 'Error:',
+        noEvents: 'No events found.',
+        language: 'Language:', series: 'Series:', talk: 'Talk:',
+        modalEvents: '⠿ Events', modalSettings: '⚙ Settings',
+        copy: '📋 Copy', copied: '✓ Copied!',
+        save: 'Save', saved: '✓ Saved',
+        defaults: 'Defaults', defaultsLoaded: '✓ Defaults Loaded',
+        unselectAll: 'Unselect All', cleared: '✓ Cleared',
+        selectTags: 'Select Tags', searchPlaceholder: 'Search tags...',
+        eventFormat: 'Event Format',
+        saveTip: 'Save your selected tags and formats',
+        saveTipEmpty: 'Please select at least 1 tag',
+    },
+    uk: {
+        from: 'Від:', till: 'До:',
+        getSchedule: '▶ Сформувати список подій', settings: '⚙ Налаштування',
+        loading: 'Завантаження…', error: 'Помилка:',
+        noEvents: 'Подій не знайдено.',
+        language: 'Мова:', series: 'Серія подій:', talk: 'TALK:',
+        modalEvents: '⠿ Події', modalSettings: '⚙ Налаштування',
+        copy: '📋 Копіювати', copied: '✓ Скопійовано!',
+        save: 'Зберегти', saved: '✓ Збережено',
+        defaults: 'За замовч.', defaultsLoaded: '✓ Завантажено',
+        unselectAll: 'Зняти все', cleared: '✓ Очищено',
+        selectTags: 'Вибір тегів', searchPlaceholder: 'Пошук тегів...',
+        eventFormat: 'Формат події',
+        saveTip: 'Зберегти вибрані теги та формати',
+        saveTipEmpty: 'Оберіть хоча б 1 тег',
+    },
+};
+
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
 /* eslint-disable no-unused-vars */
+
+function getPageLocale() {
+    const text = document.querySelector('#languageDropdown')?.textContent.trim();
+    return text === 'Укр' ? 'uk' : 'en';
+}
+
+let _locale = 'uk';
+
+function setLocale() {
+    _locale = getPageLocale();
+}
+
+function t(key) {
+    return STRINGS[_locale]?.[key] ?? STRINGS.en[key];
+}
 
 function buildArrayParam(paramName, values) {
     if (!values || values.length === 0) return '';
@@ -1015,11 +1065,19 @@ const UA_MONTHS = [
     'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня',
 ];
 
+const EN_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EN_MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 function tsDate(ts) { return new Date(ts * 1000); }
 
 function fmtDate(ts) {
     const d = tsDate(ts);
-    return `${UA_DAYS[d.getDay()]}, ${d.getDate()} ${UA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const days   = _locale === 'uk' ? UA_DAYS   : EN_DAYS;
+    const months = _locale === 'uk' ? UA_MONTHS : EN_MONTHS;
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function fmtTime(ts, sep) {
