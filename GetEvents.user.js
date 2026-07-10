@@ -193,7 +193,7 @@ function formatTimeRange(startTs, endTs, separator = '-') {
 }
 
 function seriesEventLink(seriesLink, seriesTitle) {
-    return `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(seriesTitle)}</a></div>`;
+    return `<div><b>${t('series')}</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(seriesTitle)}</a></div>`;
 }
 
 /* eslint-enable no-unused-vars */
@@ -1106,7 +1106,7 @@ function eventPageUrl(event) {
 // ─── Renderers ────────────────────────────────────────────────────────────────
 
 function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
-    if (!events.length) return '<p>Подій не знайдено.</p>';
+    if (!events.length) return `<p>${t('noEvents')}</p>`;
 
     const dateRangeEnd = dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
     const filtered = events.filter(e => {
@@ -1167,7 +1167,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     // Merge all, sorted order
     const mergedBlocks = [];
 
-    // singles sorted in - FILTER OUT BLOCKED LANGUAGES
+    // singles sorted in — filter out blocked languages when locale is 'uk'
     singles.forEach(item => {
         const eventLang = getLang(item.event);
         if (_locale !== 'uk' || !isLanguageBlocked(eventLang)) {
@@ -1252,7 +1252,7 @@ function renderSeriesGroup(event, talks) {
 
     // Add language footer if uniform
     if (hasUniformLanguage) {
-        lines.push(`<div>Мова: ${escHtml(commonLanguage)}</div>`);
+        lines.push(`<div>${t('language')} ${escHtml(commonLanguage)}</div>`);
     }
 
     lines.push(`</div>`);
@@ -1268,7 +1268,7 @@ function renderSingle(event) {
         `<div>`,
         `<div>${dateStr}, ${t1} - ${t2}</div>`,
         `<div style="font-weight:600;margin-top:2px;"><a href="${link}" target="_blank">${escHtml(event.title)}</a></div>`,
-        `<div>Мова: ${escHtml(getLang(event))}</div>`,
+        `<div>${t('language')} ${escHtml(getLang(event))}</div>`,
         `</div>`,
     ].join('\n');
 }
@@ -1283,7 +1283,7 @@ function renderTalk(event, talk) {
         `<div>${fmtDate(talk.date)}, ${timeRange}</div>`,
         seriesEventLink(seriesLink, event.title),
         `<div style="font-weight:600;margin-top:2px;">TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
-        `<div>Мова: ${lang}</div>`,
+        `<div>${t('language')} ${lang}</div>`,
         `</div>`,
     ].join('\n');
 }
