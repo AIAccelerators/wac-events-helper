@@ -766,19 +766,19 @@ function createSettingsUIHtml() {
     const selectedHtml = chipHtml(currentTags);
 
     return `
-        ${settingsHeader('Select Tags', '0')}
-        <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:10px;border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
+        ${settingsHeader(t('selectTags'), '0')}
+        <input id="tm-settings-search" type="text" placeholder="${escHtml(t('searchPlaceholder'))}" style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:10px;border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
         <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid ${COLORS.LIGHT_BORDER};border-radius:${BORDER_RADIUS.SMALL};margin-bottom:${SPACING.XL};"></div>
         <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
-        ${settingsHeader('Event Format')}
+        ${settingsHeader(t('eventFormat'))}
         ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY.at(0), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
         ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM.at(0), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
-<button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Save your selected tags and formats">Save</button>
-<button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">Defaults</button>
-<button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">Unselect All</button>
+<button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
+<button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
+<button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">${t('unselectAll')}</button>
         </div>
     `;
 }
@@ -876,12 +876,12 @@ function attachSettingsHandlers() {
 
         if (isValid) {
             saveBtn.disabled = false;
-            saveBtn.title = 'Save your selected tags and formats';
+            saveBtn.title = t('saveTip');
             saveBtn.style.opacity = '1';
             saveBtn.style.cursor = 'pointer';
         } else {
             saveBtn.disabled = true;
-            saveBtn.title = 'Please select at least 1 tag';
+            saveBtn.title = t('saveTipEmpty');
             saveBtn.style.opacity = '0.5';
             saveBtn.style.cursor = 'not-allowed';
         }
@@ -938,11 +938,10 @@ function attachSettingsHandlers() {
         SettingsManager.setFormats(selectedFormats);
 
         // Show feedback
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = '✓ Saved';
+        saveBtn.textContent = t('saved');
         saveBtn.style.background = COLORS.DARK_BLUE;
         setTimeout(() => {
-            saveBtn.textContent = originalText;
+            saveBtn.textContent = t('save');
             saveBtn.style.background = COLORS.PRIMARY_BLUE;
         }, 1500);
     };
@@ -962,12 +961,11 @@ function attachSettingsHandlers() {
         selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
 
         // Confirmation feedback
-        const originalText = defaultsBtn.textContent;
-        defaultsBtn.textContent = '✓ Defaults Loaded';
+        defaultsBtn.textContent = t('defaultsLoaded');
         defaultsBtn.style.background = COLORS.LIGHT_BLUE;
         defaultsBtn.style.color = COLORS.DARK_TEXT_BLUE;
         setTimeout(() => {
-            defaultsBtn.textContent = originalText;
+            defaultsBtn.textContent = t('defaults');
             defaultsBtn.style.background = COLORS.WHITE;
             defaultsBtn.style.color = COLORS.TEXT_GRAY;
         }, 1500);
@@ -983,12 +981,11 @@ function attachSettingsHandlers() {
         updateSaveButtonState();
 
         // Confirmation feedback
-        const originalText = unselectAllBtn.textContent;
-        unselectAllBtn.textContent = '✓ Cleared';
+        unselectAllBtn.textContent = t('cleared');
         unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
         unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
         setTimeout(() => {
-            unselectAllBtn.textContent = originalText;
+            unselectAllBtn.textContent = t('unselectAll');
             unselectAllBtn.style.background = COLORS.WHITE;
             unselectAllBtn.style.color = COLORS.TEXT_GRAY;
         }, 1500);
