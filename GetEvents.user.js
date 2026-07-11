@@ -63,6 +63,18 @@ const LANGUAGE_FILTERS = {
     BLOCKED_CODES: ['Ru'],
 };
 
+const EVENT_FORMATS = {
+    ONLINE_ONLY: ['Тільки онлайн', 'Online only', 'Онлайн'],
+    OFFLINE_WITH_STREAM: ['Офлайн зі стрімом', 'Offline with streaming', 'Офлайн со стримингом'],
+};
+
+const LEGACY_FORMAT_MAP = {
+    'Тільки онлайн':          'ONLINE_ONLY',
+    'Online only':             'ONLINE_ONLY',
+    'Офлайн зі стрімом':      'OFFLINE_WITH_STREAM',
+    'Offline with streaming':  'OFFLINE_WITH_STREAM',
+};
+
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
 /* eslint-disable no-unused-vars */
 
@@ -238,7 +250,7 @@ function seriesEventLink(seriesLink, seriesTitle) {
 const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
     STORAGE_KEY_FORMATS: 'tm_event_formats',
-    DEFAULT_FORMATS: ['Тільки онлайн', 'Офлайн зі стрімом'],
+    DEFAULT_FORMATS: ['ONLINE_ONLY', 'OFFLINE_WITH_STREAM'],
     DEFAULT_TAGS: [
 
         'AI',
@@ -387,7 +399,13 @@ const SettingsManager = {
 
     getFormats() {
         const stored = GM_getValue(this.STORAGE_KEY_FORMATS);
-        return parseJSONSafe(stored, this.DEFAULT_FORMATS, p => Array.isArray(p) && p.length > 0);
+        const parsed = parseJSONSafe(stored, this.DEFAULT_FORMATS, p => Array.isArray(p) && p.length > 0);
+        const migrated = parsed.map(v => LEGACY_FORMAT_MAP[v] ?? v).filter(v => v in EVENT_FORMATS);
+        const result = migrated.length > 0 ? migrated : this.DEFAULT_FORMATS;
+        if (result.length !== parsed.length || result.some((v, i) => v !== parsed[i])) {
+            this.setFormats(result);
+        }
+        return result;
     },
 
     setFormats(formats) {
@@ -701,8 +719,8 @@ function createSettingsUIHtml() {
         <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
         ${settingsHeader('Event Format')}
-        ${checkboxLabel('Тільки онлайн', 'tm-format-online', currentFormats.includes('Тільки онлайн'), SPACING.LG)}
-        ${checkboxLabel('Офлайн зі стрімом', 'tm-format-offline-stream', currentFormats.includes('Офлайн зі стрімом'))}
+        ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY.at(0), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
+        ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM.at(0), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Save your selected tags and formats">Save</button>
@@ -862,8 +880,8 @@ function attachSettingsHandlers() {
 
         // Save format selections
         const selectedFormats = [];
-        if (formatOnlineCheckbox.checked) selectedFormats.push('Тільки онлайн');
-        if (formatOfflineStreamCheckbox.checked) selectedFormats.push('Офлайн зі стрімом');
+        if (formatOnlineCheckbox.checked) selectedFormats.push('ONLINE_ONLY');
+        if (formatOfflineStreamCheckbox.checked) selectedFormats.push('OFFLINE_WITH_STREAM');
         SettingsManager.setFormats(selectedFormats);
 
         // Show feedback
@@ -959,7 +977,8 @@ async function fetchAllEvents(dateFrom, dateTill) {
     const formats = SettingsManager.getFormats();
 
     const tagParams = buildArrayParam('tag', tags);
-    const formatParams = buildArrayParam('event_participation_format', formats);
+    const allFormatValues = formats.flatMap(key => EVENT_FORMATS[key] ?? []);
+    const formatParams = buildArrayParam('event_participation_format', allFormatValues);
 
     const base =
         `https://wearecommunity.io/api/v2/events.json?period=upcoming` +
