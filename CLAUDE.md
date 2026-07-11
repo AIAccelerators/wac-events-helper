@@ -62,7 +62,8 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 
 ### Format Constants (`EVENT_FORMATS` / `LEGACY_FORMAT_MAP`)
 
-- `EVENT_FORMATS` keys (e.g., `'ONLINE_ONLY'`) are what gets stored and compared; values are locale string arrays used for API calls (`flatMap(key => EVENT_FORMATS[key])`).
+- `EVENT_FORMATS` keys (e.g., `'ONLINE_ONLY'`) are what gets stored and compared; values are locale string arrays (UA/EN/RU) used for API calls (`flatMap(key => EVENT_FORMATS[key])`). Include ALL locale variants — the WAC API filters by exact locale strings, so missing a language variant means no results when the site is in that language.
+- `EVENT_FORMATS[KEY].at(0)` is the display label shown in the settings UI checkboxes (first element = primary/display locale).
 - `LEGACY_FORMAT_MAP` migrates old stored locale strings to key strings on first read in `getFormats()`.
 - Co-locate `LEGACY_FORMAT_MAP` immediately after `EVENT_FORMATS` so migration stays near the definition.
 - To add a new format: add a key/value to `EVENT_FORMATS` and extend `DEFAULT_FORMATS`.
