@@ -51,6 +51,9 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 - All CSS classes injected via `GM_addStyle` use the `tm-` prefix (e.g., `tm-btn-primary`, `tm-spinner`) to avoid collisions with page styles.
 - `LANGUAGE_FILTERS` — `BLOCKED_LANGUAGES` / `BLOCKED_CODES` constants control which events/talks are silently dropped (currently blocks Russian). The filter only applies when `_locale === 'uk'`; gate any new `isLanguageBlocked()` call site with `_locale !== 'uk' || !isLanguageBlocked(...)`.
 - `gmGet(url)` — wraps `GM_xmlhttpRequest` in a Promise; all network calls go through it.
+- `parseTagCsv(text)` — global-scope helper; detects `tag` column (RFC 4180), falls back to one-per-line; returns deduplicated sorted `string[]`. Defined immediately before `createImportUIHtml()`.
+- `updateModalContent(html)` — replaces `#tm-modal-content` innerHTML; use to swap in sub-modal views (e.g. import flow) while preserving the outer modal and its drag handler. Always call the matching `attach*Handlers()` immediately after.
+- **File download pattern:** `Blob + URL.createObjectURL` + temp `<a>.click()` works in Tampermonkey for triggering CSV/file downloads; `URL.revokeObjectURL` immediately after.
 - `buildArrayParam(name, values)` — encodes an array into repeated `&name%5B%5D=value` query params.
 - `parseJSONSafe(stored, default, validator)` — safe JSON parse with fallback; used by `SettingsManager` getters.
 - Date arrays (`UA_DAYS`/`UA_MONTHS`, `EN_DAYS`/`EN_MONTHS`) are hardcoded — `Intl` was rejected because Ukrainian requires genitive case. `fmtDate()` selects the pair via `_locale`.
