@@ -1125,35 +1125,35 @@ function attachSettingsHandlers() {
 }
 
 function attachImportHandlers() {
-    const backBtn      = document.getElementById('tm-import-back');
-    const fileBtn      = document.getElementById('tm-import-file-btn');
-    const fileInput    = document.getElementById('tm-import-file-input');
+    const backBtn = document.getElementById('tm-import-back');
+    const fileBtn = document.getElementById('tm-import-file-btn');
+    const fileInput = document.getElementById('tm-import-file-input');
     const fileNameSpan = document.getElementById('tm-import-file-name');
-    const statusDiv    = document.getElementById('tm-import-status');
-    const previewDiv   = document.getElementById('tm-import-preview');
-    const applyBtn     = document.getElementById('tm-import-apply-btn');
+    const statusDiv = document.getElementById('tm-import-status');
+    const previewDiv = document.getElementById('tm-import-preview');
+    const applyBtn = document.getElementById('tm-import-apply-btn');
 
     if (!backBtn || !fileBtn || !fileInput || !statusDiv || !previewDiv || !applyBtn) return;
 
     let fileParsedTags = null;
 
     function enableApply(enable) {
-        applyBtn.disabled      = !enable;
+        applyBtn.disabled = !enable;
         applyBtn.style.opacity = enable ? '1' : '0.5';
-        applyBtn.style.cursor  = enable ? 'pointer' : 'not-allowed';
+        applyBtn.style.cursor = enable ? 'pointer' : 'not-allowed';
     }
 
     function showPreview(tags) {
         statusDiv.style.display = '';
-        previewDiv.style.color  = COLORS.TEXT_GRAY;
-        previewDiv.textContent  = t('foundTags').replace('{n}', tags.length);
+        previewDiv.style.color = COLORS.TEXT_GRAY;
+        previewDiv.textContent = t('foundTags').replace('{n}', tags.length);
         enableApply(tags.length > 0);
     }
 
     function showError(msg) {
         statusDiv.style.display = '';
-        previewDiv.style.color  = COLORS.ERROR_RED;
-        previewDiv.textContent  = msg;
+        previewDiv.style.color = COLORS.ERROR_RED;
+        previewDiv.textContent = msg;
         enableApply(false);
     }
 
@@ -1197,7 +1197,7 @@ function attachImportHandlers() {
             ? [...new Set([...SettingsManager.getTags(), ...fileParsedTags])].sort()
             : fileParsedTags;
         SettingsManager.setTags(finalTags);
-        applyBtn.textContent      = t('importSuccess').replace('{n}', finalTags.length);
+        applyBtn.textContent = t('importSuccess').replace('{n}', finalTags.length);
         applyBtn.style.background = COLORS.DARK_BLUE;
         setTimeout(() => {
             updateModalContent(createSettingsUIHtml());
@@ -1287,7 +1287,7 @@ function tsDate(ts) { return new Date(ts * 1000); }
 
 function fmtDate(ts) {
     const d = tsDate(ts);
-    const days   = _locale === 'uk' ? UA_DAYS   : EN_DAYS;
+    const days = _locale === 'uk' ? UA_DAYS : EN_DAYS;
     const months = _locale === 'uk' ? UA_MONTHS : EN_MONTHS;
     return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
