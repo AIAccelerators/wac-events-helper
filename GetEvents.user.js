@@ -75,8 +75,62 @@ const LEGACY_FORMAT_MAP = {
     'Offline with streaming':  'OFFLINE_WITH_STREAM',
 };
 
+const STRINGS = {
+    en: {
+        from: 'From:', till: 'To:',
+        getSchedule: '▶ Get schedule', settings: '⚙ Settings',
+        loading: 'Loading…', error: 'Error:',
+        noEvents: 'No events found.',
+        language: 'Language:', series: 'Series:', talk: 'Talk:',
+        modalEvents: '⠿ Events', modalSettings: '⚙ Settings',
+        copy: '📋 Copy', copied: '✓ Copied!',
+        save: 'Save', saved: '✓ Saved',
+        defaults: 'Defaults', defaultsLoaded: '✓ Defaults Loaded',
+        unselectAll: 'Unselect All', cleared: '✓ Cleared',
+        selectTags: 'Select Tags', searchPlaceholder: 'Search tags...',
+        eventFormat: 'Event Format',
+        onlineOnly: 'Online only',
+        offlineWithStream: 'Offline with streaming',
+        saveTip: 'Save your selected tags and formats',
+        saveTipEmpty: 'Please select at least 1 tag',
+    },
+    uk: {
+        from: 'Від:', till: 'До:',
+        getSchedule: '▶ Сформувати список подій', settings: '⚙ Налаштування',
+        loading: 'Завантаження…', error: 'Помилка:',
+        noEvents: 'Подій не знайдено.',
+        language: 'Мова:', series: 'Серія подій:', talk: 'TALK:',
+        modalEvents: '⠿ Події', modalSettings: '⚙ Налаштування',
+        copy: '📋 Копіювати', copied: '✓ Скопійовано!',
+        save: 'Зберегти', saved: '✓ Збережено',
+        defaults: 'За замовч.', defaultsLoaded: '✓ Завантажено',
+        unselectAll: 'Зняти все', cleared: '✓ Очищено',
+        selectTags: 'Вибір тегів', searchPlaceholder: 'Пошук тегів...',
+        eventFormat: 'Формат події',
+        onlineOnly: 'Тільки онлайн',
+        offlineWithStream: 'Офлайн зі стрімом',
+        saveTip: 'Зберегти вибрані теги та формати',
+        saveTipEmpty: 'Оберіть хоча б 1 тег',
+    },
+};
+
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
 /* eslint-disable no-unused-vars */
+
+function getPageLocale() {
+    const text = document.querySelector('#languageDropdown')?.textContent.trim();
+    return text === 'Укр' ? 'uk' : 'en';
+}
+
+let _locale = 'en';
+
+function setLocale() {
+    _locale = getPageLocale();
+}
+
+function t(key) {
+    return STRINGS[_locale]?.[key] ?? STRINGS.en[key];
+}
 
 function buildArrayParam(paramName, values) {
     if (!values || values.length === 0) return '';
@@ -143,7 +197,7 @@ function formatTimeRange(startTs, endTs, separator = '-') {
 }
 
 function seriesEventLink(seriesLink, seriesTitle) {
-    return `<div><b>Серія подій:</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(seriesTitle)}</a></div>`;
+    return `<div><b>${t('series')}</b> <a href="${escHtml(seriesLink)}" target="_blank">${escHtml(seriesTitle)}</a></div>`;
 }
 
 /* eslint-enable no-unused-vars */
@@ -551,6 +605,7 @@ const TagsManager = {
 // ─── UI panel ────────────────────────────────────────────────────────────────
 
 function createUI() {
+    setLocale();
     const today = new Date();
     const weekLater = new Date(today);
     weekLater.setDate(today.getDate() + 6);
@@ -586,12 +641,12 @@ function createUI() {
 
     const fromLabel = document.createElement('label');
     Object.assign(fromLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
-    fromLabel.innerHTML = createDateInput('Від:', 'tm-from', toInputDate(today));
+    fromLabel.innerHTML = createDateInput(t('from'), 'tm-from', toInputDate(today));
     dateGroup.appendChild(fromLabel);
 
     const tillLabel = document.createElement('label');
     Object.assign(tillLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
-    tillLabel.innerHTML = createDateInput('До:', 'tm-till', toInputDate(weekLater));
+    tillLabel.innerHTML = createDateInput(t('till'), 'tm-till', toInputDate(weekLater));
     dateGroup.appendChild(tillLabel);
 
     panel.appendChild(dateGroup);
@@ -605,7 +660,7 @@ function createUI() {
 
     const getBtn = document.createElement('button');
     getBtn.id = 'tm-btn';
-    getBtn.textContent = '▶ Get schedule';
+    getBtn.textContent = t('getSchedule');
     Object.assign(getBtn.style, {
         padding: `${SPACING.MD} ${SPACING.XXL}`,
         cursor: 'pointer',
@@ -622,7 +677,7 @@ function createUI() {
 
     const settingsBtn = document.createElement('button');
     settingsBtn.id = 'tm-settings-btn';
-    settingsBtn.textContent = '⚙ Settings';
+    settingsBtn.textContent = t('settings');
     Object.assign(settingsBtn.style, {
         padding: `${SPACING.MD} ${SPACING.XL}`,
         cursor: 'pointer',
@@ -663,14 +718,15 @@ function pad(n) {
 // ─── Fetch logic ─────────────────────────────────────────────────────────────
 
 async function onFetch() {
+    setLocale();
     const btn = document.getElementById('tm-btn');
     const dateFrom = document.getElementById('tm-from').value;
     const dateTill = document.getElementById('tm-till').value;
     if (!dateFrom || !dateTill) return;
 
     btn.disabled = true;
-    btn.textContent = 'Loading…';
-    showModal('<p><span class="tm-spinner"></span>Завантаження…</p>', 'events');
+    btn.textContent = t('loading');
+    showModal(`<p><span class="tm-spinner"></span>${t('loading')}</p>`, 'events');
 
     try {
         const events = await fetchAllEvents(dateFrom, dateTill);
@@ -690,21 +746,22 @@ async function onFetch() {
         const dateTillTs = Math.floor(new Date(dateTill).getTime() / 1000);
         updateModalContent(renderEvents(realEvents, agendaMap, dateFromTs, dateTillTs));
     } catch (err) {
-        updateModalContent(`<p style="color:red">Помилка: ${escHtml(err.message)}</p>`);
+        updateModalContent(`<p style="color:${COLORS.ERROR_RED}">${t('error')} ${escHtml(err.message)}</p>`);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Get schedule';
+        btn.textContent = t('getSchedule');
     }
 }
 
 async function showSettingsModal() {
+    setLocale();
     const html = createSettingsUIHtml();
     showModal(html, 'settings');
     attachSettingsHandlers();
 }
 
 function chipHtml(tags) {
-    return tags.map(t => `<span class="tm-chip" data-tag="${escHtml(t)}"><span>${escHtml(t)}</span><button class="chip-remove-btn" title="Remove this tag">&times;</button></span>`).join('');
+    return tags.map(tag => `<span class="tm-chip" data-tag="${escHtml(tag)}"><span>${escHtml(tag)}</span><button class="chip-remove-btn" title="Remove this tag">&times;</button></span>`).join('');
 }
 
 function createSettingsUIHtml() {
@@ -713,19 +770,19 @@ function createSettingsUIHtml() {
     const selectedHtml = chipHtml(currentTags);
 
     return `
-        ${settingsHeader('Select Tags', '0')}
-        <input id="tm-settings-search" type="text" placeholder="Search tags..." style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:10px;border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
+        ${settingsHeader(t('selectTags'), '0')}
+        <input id="tm-settings-search" type="text" placeholder="${escHtml(t('searchPlaceholder'))}" style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:10px;border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
         <div id="tm-settings-dropdown" style="max-height:200px;overflow-y:auto;border:1px solid ${COLORS.LIGHT_BORDER};border-radius:${BORDER_RADIUS.SMALL};margin-bottom:${SPACING.XL};"></div>
         <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
-        ${settingsHeader('Event Format')}
-        ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY.at(0), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
-        ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM.at(0), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
+        ${settingsHeader(t('eventFormat'))}
+        ${checkboxLabel(t('onlineOnly'), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
+        ${checkboxLabel(t('offlineWithStream'), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
-<button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Save your selected tags and formats">Save</button>
-<button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">Defaults</button>
-<button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">Unselect All</button>
+<button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
+<button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
+<button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">${t('unselectAll')}</button>
         </div>
     `;
 }
@@ -823,12 +880,12 @@ function attachSettingsHandlers() {
 
         if (isValid) {
             saveBtn.disabled = false;
-            saveBtn.title = 'Save your selected tags and formats';
+            saveBtn.title = t('saveTip');
             saveBtn.style.opacity = '1';
             saveBtn.style.cursor = 'pointer';
         } else {
             saveBtn.disabled = true;
-            saveBtn.title = 'Please select at least 1 tag';
+            saveBtn.title = t('saveTipEmpty');
             saveBtn.style.opacity = '0.5';
             saveBtn.style.cursor = 'not-allowed';
         }
@@ -885,11 +942,10 @@ function attachSettingsHandlers() {
         SettingsManager.setFormats(selectedFormats);
 
         // Show feedback
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = '✓ Saved';
+        saveBtn.textContent = t('saved');
         saveBtn.style.background = COLORS.DARK_BLUE;
         setTimeout(() => {
-            saveBtn.textContent = originalText;
+            saveBtn.textContent = t('save');
             saveBtn.style.background = COLORS.PRIMARY_BLUE;
         }, 1500);
     };
@@ -909,12 +965,11 @@ function attachSettingsHandlers() {
         selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
 
         // Confirmation feedback
-        const originalText = defaultsBtn.textContent;
-        defaultsBtn.textContent = '✓ Defaults Loaded';
+        defaultsBtn.textContent = t('defaultsLoaded');
         defaultsBtn.style.background = COLORS.LIGHT_BLUE;
         defaultsBtn.style.color = COLORS.DARK_TEXT_BLUE;
         setTimeout(() => {
-            defaultsBtn.textContent = originalText;
+            defaultsBtn.textContent = t('defaults');
             defaultsBtn.style.background = COLORS.WHITE;
             defaultsBtn.style.color = COLORS.TEXT_GRAY;
         }, 1500);
@@ -930,12 +985,11 @@ function attachSettingsHandlers() {
         updateSaveButtonState();
 
         // Confirmation feedback
-        const originalText = unselectAllBtn.textContent;
-        unselectAllBtn.textContent = '✓ Cleared';
+        unselectAllBtn.textContent = t('cleared');
         unselectAllBtn.style.background = COLORS.LIGHT_BLUE;
         unselectAllBtn.style.color = COLORS.DARK_TEXT_BLUE;
         setTimeout(() => {
-            unselectAllBtn.textContent = originalText;
+            unselectAllBtn.textContent = t('unselectAll');
             unselectAllBtn.style.background = COLORS.WHITE;
             unselectAllBtn.style.color = COLORS.TEXT_GRAY;
         }, 1500);
@@ -1015,11 +1069,19 @@ const UA_MONTHS = [
     'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня',
 ];
 
+const EN_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EN_MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 function tsDate(ts) { return new Date(ts * 1000); }
 
 function fmtDate(ts) {
     const d = tsDate(ts);
-    return `${UA_DAYS[d.getDay()]}, ${d.getDate()} ${UA_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    const days   = _locale === 'uk' ? UA_DAYS   : EN_DAYS;
+    const months = _locale === 'uk' ? UA_MONTHS : EN_MONTHS;
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function fmtTime(ts, sep) {
@@ -1045,7 +1107,7 @@ function eventPageUrl(event) {
 // ─── Renderers ────────────────────────────────────────────────────────────────
 
 function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
-    if (!events.length) return '<p>Подій не знайдено.</p>';
+    if (!events.length) return `<p>${t('noEvents')}</p>`;
 
     const dateRangeEnd = dateTillTs + TIME_CONSTANTS.SECONDS_PER_DAY;
     const filtered = events.filter(e => {
@@ -1068,7 +1130,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
                     const talkLang = talk.short_language || getLang(e);
-                    return !isLanguageBlocked(talkLang);
+                    return _locale !== 'uk' || !isLanguageBlocked(talkLang);
                 });
 
                 allowedTalks.forEach(talk => {
@@ -1106,10 +1168,10 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     // Merge all, sorted order
     const mergedBlocks = [];
 
-    // singles sorted in - FILTER OUT BLOCKED LANGUAGES
+    // singles sorted in — filter out blocked languages when locale is 'uk'
     singles.forEach(item => {
         const eventLang = getLang(item.event);
-        if (!isLanguageBlocked(eventLang)) {
+        if (_locale !== 'uk' || !isLanguageBlocked(eventLang)) {
             mergedBlocks.push({ type: 'single', event: item.event });
         }
     });
@@ -1191,7 +1253,7 @@ function renderSeriesGroup(event, talks) {
 
     // Add language footer if uniform
     if (hasUniformLanguage) {
-        lines.push(`<div>Мова: ${escHtml(commonLanguage)}</div>`);
+        lines.push(`<div>${t('language')} ${escHtml(commonLanguage)}</div>`);
     }
 
     lines.push(`</div>`);
@@ -1207,7 +1269,7 @@ function renderSingle(event) {
         `<div>`,
         `<div>${dateStr}, ${t1} - ${t2}</div>`,
         `<div style="font-weight:600;margin-top:2px;"><a href="${link}" target="_blank">${escHtml(event.title)}</a></div>`,
-        `<div>Мова: ${escHtml(getLang(event))}</div>`,
+        `<div>${t('language')} ${escHtml(getLang(event))}</div>`,
         `</div>`,
     ].join('\n');
 }
@@ -1221,8 +1283,8 @@ function renderTalk(event, talk) {
         `<div>`,
         `<div>${fmtDate(talk.date)}, ${timeRange}</div>`,
         seriesEventLink(seriesLink, event.title),
-        `<div style="font-weight:600;margin-top:2px;">TALK: <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
-        `<div>Мова: ${lang}</div>`,
+        `<div style="font-weight:600;margin-top:2px;">${t('talk')} <a href="${escHtml(talkUrl)}" target="_blank">${escHtml(talk.title)}</a></div>`,
+        `<div>${t('language')} ${lang}</div>`,
         `</div>`,
     ].join('\n');
 }
@@ -1300,7 +1362,7 @@ function showModal(html, type = 'events') {
     });
 
     const dragHint = document.createElement('span');
-    dragHint.textContent = type === 'settings' ? '⚙ Settings' : '⠿ Events';
+    dragHint.textContent = type === 'settings' ? t('modalSettings') : t('modalEvents');
     Object.assign(dragHint.style, { fontWeight: 'bold', fontSize: '13px', color: '#444' });
 
     const btnStyle = {
@@ -1320,7 +1382,7 @@ function showModal(html, type = 'events') {
     let copyBtn = null;
     if (type === 'events') {
         copyBtn = document.createElement('button');
-        copyBtn.textContent = '📋 Copy';
+        copyBtn.textContent = t('copy');
         Object.assign(copyBtn.style, { ...btnStyle, border: '1px solid #ccc' });
         copyBtn.onclick = async () => {
             const html = content.innerHTML;
@@ -1331,8 +1393,8 @@ function showModal(html, type = 'events') {
                     'text/plain': new Blob([plain], { type: 'text/plain' }),
                 }),
             ]);
-            copyBtn.textContent = '✓ Copied!';
-            setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+            copyBtn.textContent = t('copied');
+            setTimeout(() => { copyBtn.textContent = t('copy'); }, 1500);
         };
         btnGroup.insertBefore(copyBtn, closeBtn);
     }
