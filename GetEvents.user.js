@@ -819,6 +819,11 @@ function createSettingsUIHtml() {
         ${checkboxLabel(t('onlineOnly'), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
         ${checkboxLabel(t('offlineWithStream'), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
+        ${_locale === 'uk' ? `
+        ${settingsHeader(t('languageFilters'))}
+        ${checkboxLabel(t('ignoreRussian'), 'tm-ignore-russian', SettingsManager.getIgnoreRussian())}
+        ` : ''}
+
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
 <button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
@@ -916,6 +921,9 @@ function attachSettingsHandlers() {
     const importBtn = document.getElementById('tm-settings-import');
     const formatOnlineCheckbox = document.getElementById('tm-format-online');
     const formatOfflineStreamCheckbox = document.getElementById('tm-format-offline-stream');
+    const ignoreRussianCheckbox = _locale === 'uk'
+        ? document.getElementById('tm-ignore-russian')
+        : null;
 
     if (!searchInput || !dropdown || !saveBtn || !defaultsBtn || !unselectAllBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
 
@@ -1059,6 +1067,7 @@ function attachSettingsHandlers() {
         if (formatOnlineCheckbox.checked) selectedFormats.push('ONLINE_ONLY');
         if (formatOfflineStreamCheckbox.checked) selectedFormats.push('OFFLINE_WITH_STREAM');
         SettingsManager.setFormats(selectedFormats);
+        if (ignoreRussianCheckbox) SettingsManager.setIgnoreRussian(ignoreRussianCheckbox.checked);
 
         // Show feedback
         saveBtn.textContent = t('saved');
@@ -1081,6 +1090,8 @@ function attachSettingsHandlers() {
         // Reset formats
         formatOnlineCheckbox.checked = true;
         formatOfflineStreamCheckbox.checked = true;
+        SettingsManager.setIgnoreRussian(SettingsManager.DEFAULT_IGNORE_RUSSIAN);
+        if (ignoreRussianCheckbox) ignoreRussianCheckbox.checked = true;
         selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
 
         // Confirmation feedback
@@ -1098,6 +1109,7 @@ function attachSettingsHandlers() {
         TagsManager.clearAll();
         formatOnlineCheckbox.checked = false;
         formatOfflineStreamCheckbox.checked = false;
+        if (ignoreRussianCheckbox) ignoreRussianCheckbox.checked = false;
         selectedList.innerHTML = '';
         searchInput.value = '';
         updateDropdown('');
