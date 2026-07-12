@@ -105,6 +105,8 @@ const STRINGS = {
         errNoTagColumn: 'No "tag" column found',
         errEmptyFile: 'File is empty',
         errNoTags: 'No tags found in file',
+        languageFilters: 'Language Filters',
+        ignoreRussian: 'Ignore Russian-language events',
     },
     uk: {
         from: 'Від:', till: 'До:',
@@ -135,6 +137,8 @@ const STRINGS = {
         errNoTagColumn: 'Колонка "tag" не знайдена',
         errEmptyFile: 'Файл порожній',
         errNoTags: 'Теги не знайдені у файлі',
+        languageFilters: 'Мова подій',
+        ignoreRussian: 'Ігнорувати події російською',
     },
 };
 
@@ -329,6 +333,8 @@ const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
     STORAGE_KEY_FORMATS: 'tm_event_formats',
     DEFAULT_FORMATS: ['ONLINE_ONLY', 'OFFLINE_WITH_STREAM'],
+    STORAGE_KEY_IGNORE_RUSSIAN: 'tm_ignore_russian',
+    DEFAULT_IGNORE_RUSSIAN: true,
     DEFAULT_TAGS: [
 
         'AI',
@@ -490,9 +496,19 @@ const SettingsManager = {
         GM_setValue(this.STORAGE_KEY_FORMATS, JSON.stringify(formats));
     },
 
+    getIgnoreRussian() {
+        const stored = GM_getValue(this.STORAGE_KEY_IGNORE_RUSSIAN);
+        return parseJSONSafe(stored, this.DEFAULT_IGNORE_RUSSIAN, p => typeof p === 'boolean');
+    },
+
+    setIgnoreRussian(value) {
+        GM_setValue(this.STORAGE_KEY_IGNORE_RUSSIAN, JSON.stringify(value));
+    },
+
     reset() {
         GM_setValue(this.STORAGE_KEY, '');
         GM_setValue(this.STORAGE_KEY_FORMATS, '');
+        GM_setValue(this.STORAGE_KEY_IGNORE_RUSSIAN, '');
     }
 };
 
