@@ -814,6 +814,7 @@ function createSettingsUIHtml() {
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
 <button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
 <button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">${t('unselectAll')}</button>
+<button id="tm-settings-import" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Import tags from CSV">${t('importTags')}</button>
         </div>
     `;
 }
@@ -864,6 +865,46 @@ function parseTagCsv(text) {
     }
 
     return [...new Set(tags.filter(tag => tag.length > 0))].sort();
+}
+
+function createImportUIHtml() {
+    return `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${SPACING.XXL};">
+            <span style="font-size:13px;font-weight:600;">${escHtml(t('importTags'))}</span>
+            <button id="tm-import-back" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('back'))}</button>
+        </div>
+        <div style="display:flex;gap:0;margin-bottom:${SPACING.XXL};border-bottom:2px solid ${COLORS.MEDIUM_GRAY};">
+            <button id="tm-import-tab-url" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:none;border:none;border-bottom:2px solid ${COLORS.PRIMARY_BLUE};margin-bottom:-2px;font-size:13px;font-weight:600;color:${COLORS.PRIMARY_BLUE};">${escHtml(t('tabUrl'))}</button>
+            <button id="tm-import-tab-file" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:13px;color:${COLORS.TEXT_GRAY};">${escHtml(t('tabFile'))}</button>
+        </div>
+        <div id="tm-import-panel-url">
+            <input id="tm-import-url-input" type="text" placeholder="https://…"
+                style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:${SPACING.LG};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
+            <button id="tm-import-fetch-btn"
+                style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('fetchBtn'))}</button>
+        </div>
+        <div id="tm-import-panel-file" style="display:none;">
+            <div style="display:flex;align-items:center;gap:${SPACING.LG};">
+                <button id="tm-import-file-btn" type="button"
+                    style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('chooseFile'))}</button>
+                <span id="tm-import-file-name" style="font-size:12px;color:${COLORS.TEXT_GRAY};">—</span>
+                <input id="tm-import-file-input" type="file" accept=".csv,.txt" style="display:none;">
+            </div>
+        </div>
+        <div id="tm-import-status" style="display:none;margin-top:${SPACING.XL};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
+            <div id="tm-import-preview" style="margin-bottom:${SPACING.LG};font-size:13px;"></div>
+            <div style="display:flex;gap:${SPACING.XXL};margin-bottom:${SPACING.XL};">
+                <label style="display:flex;align-items:center;gap:${SPACING.LG};cursor:pointer;font-size:13px;">
+                    <input type="radio" name="tm-import-mode" value="replace" checked> ${escHtml(t('replaceMode'))}
+                </label>
+                <label style="display:flex;align-items:center;gap:${SPACING.LG};cursor:pointer;font-size:13px;">
+                    <input type="radio" name="tm-import-mode" value="merge"> ${escHtml(t('mergeMode'))}
+                </label>
+            </div>
+            <button id="tm-import-apply-btn" disabled
+                style="padding:${SPACING.MD} ${SPACING.XL};cursor:not-allowed;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;opacity:0.5;">${escHtml(t('applyBtn'))}</button>
+        </div>
+    `;
 }
 
 function attachSettingsHandlers() {
