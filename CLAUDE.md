@@ -55,6 +55,7 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 - `parseJSONSafe(stored, default, validator)` — safe JSON parse with fallback; used by `SettingsManager` getters.
 - Date arrays (`UA_DAYS`/`UA_MONTHS`, `EN_DAYS`/`EN_MONTHS`) are hardcoded — `Intl` was rejected because Ukrainian requires genitive case. `fmtDate()` selects the pair via `_locale`.
 - HTML generation separated from listener attachment (e.g., `createSettingsUIHtml()` + `attachSettingsHandlers()`).
+- Avoid alignment-padded `=` (multiple spaces before `=` to align columns) — the IDE ESLint plugin (`.eslintrc.json`) flags `no-multi-spaces` even though the CLI flat config (`eslint.config.js`) does not. Use single spaces consistently.
 - Rendering functions return HTML as array of strings, joined at the end with `\n` (e.g., `renderSeriesGroup()`, `renderSingle()`, `renderTalk()`).
 - Language fallback: `talk.short_language || getLang(event)` (prefer talk's language, fall back to event's language).
 - **Security:** All user content (titles, URLs, language values) must be escaped with `escHtml()` to prevent XSS.
