@@ -89,6 +89,8 @@ const STRINGS = {
         unselectAll: 'Unselect All', cleared: '✓ Cleared',
         selectTags: 'Select Tags', searchPlaceholder: 'Search tags...',
         eventFormat: 'Event Format',
+        onlineOnly: 'Online only',
+        offlineWithStream: 'Offline with streaming',
         saveTip: 'Save your selected tags and formats',
         saveTipEmpty: 'Please select at least 1 tag',
     },
@@ -105,6 +107,8 @@ const STRINGS = {
         unselectAll: 'Зняти все', cleared: '✓ Очищено',
         selectTags: 'Вибір тегів', searchPlaceholder: 'Пошук тегів...',
         eventFormat: 'Формат події',
+        onlineOnly: 'Тільки онлайн',
+        offlineWithStream: 'Офлайн зі стрімом',
         saveTip: 'Зберегти вибрані теги та формати',
         saveTipEmpty: 'Оберіть хоча б 1 тег',
     },
@@ -772,8 +776,8 @@ function createSettingsUIHtml() {
         <div id="tm-settings-selected" style="margin-bottom:${SPACING.XL};min-height:24px;">${selectedHtml}</div>
 
         ${settingsHeader(t('eventFormat'))}
-        ${checkboxLabel(EVENT_FORMATS.ONLINE_ONLY.at(0), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
-        ${checkboxLabel(EVENT_FORMATS.OFFLINE_WITH_STREAM.at(0), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
+        ${checkboxLabel(t('onlineOnly'), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
+        ${checkboxLabel(t('offlineWithStream'), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
