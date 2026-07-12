@@ -105,6 +105,8 @@ const STRINGS = {
         errNoTagColumn: 'No "tag" column found',
         errEmptyFile: 'File is empty',
         errNoTags: 'No tags found in file',
+        languageFilters: 'Language Filters',
+        ignoreRussian: 'Ignore Russian-language events',
     },
     uk: {
         from: 'Від:', till: 'До:',
@@ -135,6 +137,8 @@ const STRINGS = {
         errNoTagColumn: 'Колонка "tag" не знайдена',
         errEmptyFile: 'Файл порожній',
         errNoTags: 'Теги не знайдені у файлі',
+        languageFilters: 'Мова подій',
+        ignoreRussian: 'Ігнорувати події російською',
     },
 };
 
@@ -329,6 +333,8 @@ const SettingsManager = {
     STORAGE_KEY: 'tm_selected_tags',
     STORAGE_KEY_FORMATS: 'tm_event_formats',
     DEFAULT_FORMATS: ['ONLINE_ONLY', 'OFFLINE_WITH_STREAM'],
+    STORAGE_KEY_IGNORE_RUSSIAN: 'tm_ignore_russian',
+    DEFAULT_IGNORE_RUSSIAN: true,
     DEFAULT_TAGS: [
 
         'AI',
@@ -490,9 +496,19 @@ const SettingsManager = {
         GM_setValue(this.STORAGE_KEY_FORMATS, JSON.stringify(formats));
     },
 
+    getIgnoreRussian() {
+        const stored = GM_getValue(this.STORAGE_KEY_IGNORE_RUSSIAN);
+        return parseJSONSafe(stored, this.DEFAULT_IGNORE_RUSSIAN, p => typeof p === 'boolean');
+    },
+
+    setIgnoreRussian(value) {
+        GM_setValue(this.STORAGE_KEY_IGNORE_RUSSIAN, JSON.stringify(value));
+    },
+
     reset() {
         GM_setValue(this.STORAGE_KEY, '');
         GM_setValue(this.STORAGE_KEY_FORMATS, '');
+        GM_setValue(this.STORAGE_KEY_IGNORE_RUSSIAN, '');
     }
 };
 
@@ -803,6 +819,11 @@ function createSettingsUIHtml() {
         ${checkboxLabel(t('onlineOnly'), 'tm-format-online', currentFormats.includes('ONLINE_ONLY'), SPACING.LG)}
         ${checkboxLabel(t('offlineWithStream'), 'tm-format-offline-stream', currentFormats.includes('OFFLINE_WITH_STREAM'))}
 
+        ${_locale === 'uk' ? `
+        ${settingsHeader(t('languageFilters'))}
+        ${checkboxLabel(t('ignoreRussian'), 'tm-ignore-russian', SettingsManager.getIgnoreRussian())}
+        ` : ''}
+
         <div style="display:flex;gap:${SPACING.LG};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
 <button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
@@ -900,6 +921,9 @@ function attachSettingsHandlers() {
     const importBtn = document.getElementById('tm-settings-import');
     const formatOnlineCheckbox = document.getElementById('tm-format-online');
     const formatOfflineStreamCheckbox = document.getElementById('tm-format-offline-stream');
+    const ignoreRussianCheckbox = _locale === 'uk'
+        ? document.getElementById('tm-ignore-russian')
+        : null;
 
     if (!searchInput || !dropdown || !saveBtn || !defaultsBtn || !unselectAllBtn || !formatOnlineCheckbox || !formatOfflineStreamCheckbox) return;
 
@@ -1043,6 +1067,7 @@ function attachSettingsHandlers() {
         if (formatOnlineCheckbox.checked) selectedFormats.push('ONLINE_ONLY');
         if (formatOfflineStreamCheckbox.checked) selectedFormats.push('OFFLINE_WITH_STREAM');
         SettingsManager.setFormats(selectedFormats);
+        if (ignoreRussianCheckbox) SettingsManager.setIgnoreRussian(ignoreRussianCheckbox.checked);
 
         // Show feedback
         saveBtn.textContent = t('saved');
@@ -1065,6 +1090,8 @@ function attachSettingsHandlers() {
         // Reset formats
         formatOnlineCheckbox.checked = true;
         formatOfflineStreamCheckbox.checked = true;
+        SettingsManager.setIgnoreRussian(SettingsManager.DEFAULT_IGNORE_RUSSIAN);
+        if (ignoreRussianCheckbox) ignoreRussianCheckbox.checked = true;
         selectedList.innerHTML = chipHtml(SettingsManager.DEFAULT_TAGS);
 
         // Confirmation feedback
@@ -1082,6 +1109,7 @@ function attachSettingsHandlers() {
         TagsManager.clearAll();
         formatOnlineCheckbox.checked = false;
         formatOfflineStreamCheckbox.checked = false;
+        if (ignoreRussianCheckbox) ignoreRussianCheckbox.checked = false;
         selectedList.innerHTML = '';
         searchInput.value = '';
         updateDropdown('');
@@ -1338,7 +1366,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
                     const talkLang = talk.short_language || getLang(e);
-                    return _locale !== 'uk' || !isLanguageBlocked(talkLang);
+                    return _locale !== 'uk' || !SettingsManager.getIgnoreRussian() || !isLanguageBlocked(talkLang);
                 });
 
                 allowedTalks.forEach(talk => {
@@ -1379,7 +1407,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     // singles sorted in — filter out blocked languages when locale is 'uk'
     singles.forEach(item => {
         const eventLang = getLang(item.event);
-        if (_locale !== 'uk' || !isLanguageBlocked(eventLang)) {
+        if (_locale !== 'uk' || !SettingsManager.getIgnoreRussian() || !isLanguageBlocked(eventLang)) {
             mergedBlocks.push({ type: 'single', event: item.event });
         }
     });

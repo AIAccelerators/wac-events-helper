@@ -49,13 +49,14 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 - Code structure: constants + helper functions (lines ~1–150) live in **global scope** before the IIFE; everything else is inside `(function() { ... })()`. New helpers go in global scope; feature logic goes inside the IIFE.
 - All inline styles must use `COLORS`, `SPACING`, and `BORDER_RADIUS` constants — never hardcode color/size values.
 - All CSS classes injected via `GM_addStyle` use the `tm-` prefix (e.g., `tm-btn-primary`, `tm-spinner`) to avoid collisions with page styles.
-- `LANGUAGE_FILTERS` — `BLOCKED_LANGUAGES` / `BLOCKED_CODES` constants control which events/talks are silently dropped (currently blocks Russian). The filter only applies when `_locale === 'uk'`; gate any new `isLanguageBlocked()` call site with `_locale !== 'uk' || !isLanguageBlocked(...)`.
+- `LANGUAGE_FILTERS` — `BLOCKED_LANGUAGES` / `BLOCKED_CODES` constants control which events/talks are silently dropped (currently blocks Russian). The filter only applies when `_locale === 'uk'` and `SettingsManager.getIgnoreRussian()` is `true`; gate any new `isLanguageBlocked()` call site with `_locale !== 'uk' || !SettingsManager.getIgnoreRussian() || !isLanguageBlocked(...)`.
 - `gmGet(url)` — wraps `GM_xmlhttpRequest` in a Promise; all network calls go through it.
 - `parseTagCsv(text)` — global-scope helper; detects `tag` column (RFC 4180), falls back to one-per-line; returns deduplicated sorted `string[]`. Defined immediately before `createImportUIHtml()`.
 - `updateModalContent(html)` — replaces `#tm-modal-content` innerHTML; use to swap in sub-modal views (e.g. import flow) while preserving the outer modal and its drag handler. Always call the matching `attach*Handlers()` immediately after.
 - **File download pattern:** `Blob + URL.createObjectURL` + temp `<a>.click()` works in Tampermonkey for triggering CSV/file downloads; `URL.revokeObjectURL` immediately after.
 - `buildArrayParam(name, values)` — encodes an array into repeated `&name%5B%5D=value` query params.
 - `parseJSONSafe(stored, default, validator)` — safe JSON parse with fallback; used by `SettingsManager` getters.
+- **`SettingsManager` defaults pattern:** `defaultsBtn.onclick` persists all settings to storage immediately (no Save click required) — any new setting added to the defaults handler must call `SettingsManager.setX(DEFAULT_X)` directly there, not just update the checkbox visual state.
 - Date arrays (`UA_DAYS`/`UA_MONTHS`, `EN_DAYS`/`EN_MONTHS`) are hardcoded — `Intl` was rejected because Ukrainian requires genitive case. `fmtDate()` selects the pair via `_locale`.
 - HTML generation separated from listener attachment (e.g., `createSettingsUIHtml()` + `attachSettingsHandlers()`).
 - Avoid alignment-padded `=` (multiple spaces before `=` to align columns) — the IDE ESLint plugin (`.eslintrc.json`) flags `no-multi-spaces` even though the CLI flat config (`eslint.config.js`) does not. Use single spaces consistently.
