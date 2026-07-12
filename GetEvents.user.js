@@ -915,6 +915,7 @@ function attachSettingsHandlers() {
     const saveBtn = document.getElementById('tm-settings-save');
     const defaultsBtn = document.getElementById('tm-settings-defaults');
     const unselectAllBtn = document.getElementById('tm-settings-unselect-all');
+    const importBtn = document.getElementById('tm-settings-import');
     const formatOnlineCheckbox = document.getElementById('tm-format-online');
     const formatOfflineStreamCheckbox = document.getElementById('tm-format-offline-stream');
 
@@ -1115,8 +1116,159 @@ function attachSettingsHandlers() {
         }, 1500);
     };
 
+    if (importBtn) {
+        importBtn.onclick = () => {
+            updateModalContent(createImportUIHtml());
+            attachImportHandlers();
+        };
+    }
+
     updateDropdown('');
     updateSaveButtonState();
+}
+
+function attachImportHandlers() {
+    const backBtn       = document.getElementById('tm-import-back');
+    const tabUrlBtn     = document.getElementById('tm-import-tab-url');
+    const tabFileBtn    = document.getElementById('tm-import-tab-file');
+    const panelUrl      = document.getElementById('tm-import-panel-url');
+    const panelFile     = document.getElementById('tm-import-panel-file');
+    const urlInput      = document.getElementById('tm-import-url-input');
+    const fetchBtn      = document.getElementById('tm-import-fetch-btn');
+    const fileBtn       = document.getElementById('tm-import-file-btn');
+    const fileInput     = document.getElementById('tm-import-file-input');
+    const fileNameSpan  = document.getElementById('tm-import-file-name');
+    const statusDiv     = document.getElementById('tm-import-status');
+    const previewDiv    = document.getElementById('tm-import-preview');
+    const applyBtn      = document.getElementById('tm-import-apply-btn');
+
+    if (!backBtn || !tabUrlBtn || !tabFileBtn || !fetchBtn || !fileBtn || !applyBtn) return;
+
+    let urlParsedTags  = null;
+    let fileParsedTags = null;
+    let activeTab      = 'url';
+
+    function getActiveTags() {
+        return activeTab === 'url' ? urlParsedTags : fileParsedTags;
+    }
+
+    function enableApply(enable) {
+        applyBtn.disabled    = !enable;
+        applyBtn.style.opacity = enable ? '1' : '0.5';
+        applyBtn.style.cursor  = enable ? 'pointer' : 'not-allowed';
+    }
+
+    function showPreview(tags) {
+        statusDiv.style.display = '';
+        previewDiv.style.color  = COLORS.TEXT_GRAY;
+        previewDiv.textContent  = t('foundTags').replace('{n}', tags.length);
+        enableApply(tags.length > 0);
+    }
+
+    function showError(msg) {
+        statusDiv.style.display = '';
+        previewDiv.style.color  = COLORS.ERROR_RED;
+        previewDiv.textContent  = msg;
+        enableApply(false);
+    }
+
+    function switchTab(tab) {
+        activeTab = tab;
+        const isUrl = tab === 'url';
+        panelUrl.style.display  = isUrl ? '' : 'none';
+        panelFile.style.display = isUrl ? 'none' : '';
+        tabUrlBtn.style.borderBottomColor = isUrl ? COLORS.PRIMARY_BLUE : 'transparent';
+        tabUrlBtn.style.color             = isUrl ? COLORS.PRIMARY_BLUE : COLORS.TEXT_GRAY;
+        tabUrlBtn.style.fontWeight        = isUrl ? '600' : 'normal';
+        tabFileBtn.style.borderBottomColor = isUrl ? 'transparent' : COLORS.PRIMARY_BLUE;
+        tabFileBtn.style.color             = isUrl ? COLORS.TEXT_GRAY : COLORS.PRIMARY_BLUE;
+        tabFileBtn.style.fontWeight        = isUrl ? 'normal' : '600';
+        const tags = getActiveTags();
+        if (tags !== null) showPreview(tags);
+        else statusDiv.style.display = 'none';
+    }
+
+    backBtn.onclick = () => {
+        updateModalContent(createSettingsUIHtml());
+        attachSettingsHandlers();
+    };
+
+    tabUrlBtn.onclick  = () => switchTab('url');
+    tabFileBtn.onclick = () => switchTab('file');
+
+    fetchBtn.onclick = async () => {
+        const url = urlInput.value.trim();
+        if (!url) return;
+        fetchBtn.disabled    = true;
+        fetchBtn.textContent = '…';
+        urlParsedTags = null;
+        statusDiv.style.display = 'none';
+        try {
+            const text = await gmGetText(url);
+            urlParsedTags = parseTagCsv(text);
+            if (urlParsedTags.length === 0) {
+                showError(t('errNoTags'));
+                urlParsedTags = null;
+            } else {
+                showPreview(urlParsedTags);
+            }
+        } catch (err) {
+            showError(err.status
+                ? t('errFetchFailed').replace('{s}', err.status)
+                : t('errFetchFailed').replace('{s}', '—'));
+        } finally {
+            fetchBtn.disabled    = false;
+            fetchBtn.textContent = t('fetchBtn');
+        }
+    };
+
+    fileBtn.onclick = () => fileInput.click();
+
+    fileInput.onchange = () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        fileNameSpan.textContent = file.name;
+        fileParsedTags = null;
+        statusDiv.style.display = 'none';
+        const reader = new FileReader();
+        reader.onerror = () => {
+            showError(t('errEmptyFile'));
+        };
+        reader.onload = (e) => {
+            const text = e.target.result;
+            if (!text || !text.trim()) {
+                showError(t('errEmptyFile'));
+                return;
+            }
+            fileParsedTags = parseTagCsv(text);
+            if (fileParsedTags.length === 0) {
+                showError(t('errNoTags'));
+                fileParsedTags = null;
+            } else {
+                showPreview(fileParsedTags);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    applyBtn.onclick = () => {
+        const tags = getActiveTags();
+        if (!tags || tags.length === 0) return;
+        const mode = document.querySelector('[name="tm-import-mode"]:checked')?.value;
+        let finalTags;
+        if (mode === 'merge') {
+            finalTags = [...new Set([...SettingsManager.getTags(), ...tags])].sort();
+        } else {
+            finalTags = tags;
+        }
+        SettingsManager.setTags(finalTags);
+        applyBtn.textContent       = t('importSuccess').replace('{n}', finalTags.length);
+        applyBtn.style.background  = COLORS.DARK_BLUE;
+        setTimeout(() => {
+            updateModalContent(createSettingsUIHtml());
+            attachSettingsHandlers();
+        }, 1500);
+    };
 }
 
 function gmGet(url) {
