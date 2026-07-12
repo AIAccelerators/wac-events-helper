@@ -4,7 +4,7 @@
 // @version      0.3.4
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
-// @connect      wearecommunity.io/api/v2
+// @connect      wearecommunity.io
 // @match        https://wearecommunity.io/events
 // @match        https://wearecommunity.io/events?*
 // @match        https://wearecommunity.io/events/*
@@ -93,6 +93,18 @@ const STRINGS = {
         offlineWithStream: 'Offline with streaming',
         saveTip: 'Save your selected tags and formats',
         saveTipEmpty: 'Please select at least 1 tag',
+        importTags: 'Import Tags',
+        exportTags: 'Export Tags',
+        back: '← Back',
+        chooseFile: 'Choose file…',
+        foundTags: 'Found {n} tags',
+        replaceMode: 'Replace',
+        mergeMode: 'Merge',
+        applyBtn: 'Apply',
+        importSuccess: 'Imported {n} tags',
+        errNoTagColumn: 'No "tag" column found',
+        errEmptyFile: 'File is empty',
+        errNoTags: 'No tags found in file',
     },
     uk: {
         from: 'Від:', till: 'До:',
@@ -111,6 +123,18 @@ const STRINGS = {
         offlineWithStream: 'Офлайн зі стрімом',
         saveTip: 'Зберегти вибрані теги та формати',
         saveTipEmpty: 'Оберіть хоча б 1 тег',
+        importTags: 'Імпорт тегів',
+        exportTags: 'Експорт тегів',
+        back: '← Назад',
+        chooseFile: 'Обрати файл…',
+        foundTags: 'Знайдено тегів: {n}',
+        replaceMode: 'Замінити',
+        mergeMode: "Об'єднати",
+        applyBtn: 'Застосувати',
+        importSuccess: 'Імпортовано тегів: {n}',
+        errNoTagColumn: 'Колонка "tag" не знайдена',
+        errEmptyFile: 'Файл порожній',
+        errNoTags: 'Теги не знайдені у файлі',
     },
 };
 
@@ -783,6 +807,84 @@ function createSettingsUIHtml() {
 <button id="tm-settings-save" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="${escHtml(t('saveTip'))}">${t('save')}</button>
 <button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
 <button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">${t('unselectAll')}</button>
+<button id="tm-settings-import" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Import tags from CSV">${t('importTags')}</button>
+<button id="tm-settings-export" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Export saved tags to CSV">${t('exportTags')}</button>
+        </div>
+    `;
+}
+
+function parseTagCsv(text) {
+    if (!text || !text.trim()) return [];
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return [];
+
+    function parseRow(line) {
+        const result = [];
+        let i = 0;
+        while (i < line.length) {
+            if (line[i] === '"') {
+                let field = '';
+                i++;
+                while (i < line.length) {
+                    if (line[i] === '"' && line[i + 1] === '"') { field += '"'; i += 2; }
+                    else if (line[i] === '"') { i++; break; }
+                    else { field += line[i++]; }
+                }
+                result.push(field.trim());
+                if (i < line.length && line[i] === ',') i++;
+            } else {
+                const end = line.indexOf(',', i);
+                if (end === -1) { result.push(line.slice(i).trim()); break; }
+                else { result.push(line.slice(i, end).trim()); i = end + 1; }
+            }
+        }
+        return result;
+    }
+
+    const firstCells = parseRow(lines[0]);
+    const headerCells = firstCells.map(c => c.toLowerCase());
+    const tagColIndex = headerCells.indexOf('tag');
+    const looksLikeCsv = firstCells.length > 1;
+
+    let tags;
+    if (tagColIndex !== -1) {
+        // Standard CSV mode: extract values from 'tag' column, skip header row
+        tags = lines.slice(1).map(line => (parseRow(line)[tagColIndex] || '').trim());
+    } else if (looksLikeCsv) {
+        // Multi-column CSV with no 'tag' column — return empty so caller shows error
+        return [];
+    } else {
+        // Plain list: each non-empty line is one tag
+        tags = lines;
+    }
+
+    return [...new Set(tags.filter(tag => tag.length > 0))].sort();
+}
+
+function createImportUIHtml() {
+    return `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${SPACING.XXL};">
+            <span style="font-size:13px;font-weight:600;">${escHtml(t('importTags'))}</span>
+            <button id="tm-import-back" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('back'))}</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:${SPACING.LG};margin-bottom:${SPACING.XL};">
+            <button id="tm-import-file-btn" type="button"
+                style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('chooseFile'))}</button>
+            <span id="tm-import-file-name" style="font-size:12px;color:${COLORS.TEXT_GRAY};">—</span>
+            <input id="tm-import-file-input" type="file" accept=".csv,.txt" style="display:none;">
+        </div>
+        <div id="tm-import-status" style="display:none;margin-top:${SPACING.XL};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
+            <div id="tm-import-preview" style="margin-bottom:${SPACING.LG};font-size:13px;"></div>
+            <div style="display:flex;gap:${SPACING.XXL};margin-bottom:${SPACING.XL};">
+                <label style="display:flex;align-items:center;gap:${SPACING.LG};cursor:pointer;font-size:13px;">
+                    <input type="radio" name="tm-import-mode" value="replace" checked> ${escHtml(t('replaceMode'))}
+                </label>
+                <label style="display:flex;align-items:center;gap:${SPACING.LG};cursor:pointer;font-size:13px;">
+                    <input type="radio" name="tm-import-mode" value="merge"> ${escHtml(t('mergeMode'))}
+                </label>
+            </div>
+            <button id="tm-import-apply-btn" disabled
+                style="padding:${SPACING.MD} ${SPACING.XL};cursor:not-allowed;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;opacity:0.5;">${escHtml(t('applyBtn'))}</button>
         </div>
     `;
 }
@@ -795,6 +897,7 @@ function attachSettingsHandlers() {
     const saveBtn = document.getElementById('tm-settings-save');
     const defaultsBtn = document.getElementById('tm-settings-defaults');
     const unselectAllBtn = document.getElementById('tm-settings-unselect-all');
+    const importBtn = document.getElementById('tm-settings-import');
     const formatOnlineCheckbox = document.getElementById('tm-format-online');
     const formatOfflineStreamCheckbox = document.getElementById('tm-format-offline-stream');
 
@@ -995,8 +1098,112 @@ function attachSettingsHandlers() {
         }, 1500);
     };
 
+    if (importBtn) {
+        importBtn.onclick = () => {
+            updateModalContent(createImportUIHtml());
+            attachImportHandlers();
+        };
+    }
+
+    const exportBtn = document.getElementById('tm-settings-export');
+    if (exportBtn) {
+        exportBtn.onclick = () => {
+            const tags = SettingsManager.getTags();
+            const csv = 'tag\n' + tags.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tags.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+    }
+
     updateDropdown('');
     updateSaveButtonState();
+}
+
+function attachImportHandlers() {
+    const backBtn = document.getElementById('tm-import-back');
+    const fileBtn = document.getElementById('tm-import-file-btn');
+    const fileInput = document.getElementById('tm-import-file-input');
+    const fileNameSpan = document.getElementById('tm-import-file-name');
+    const statusDiv = document.getElementById('tm-import-status');
+    const previewDiv = document.getElementById('tm-import-preview');
+    const applyBtn = document.getElementById('tm-import-apply-btn');
+
+    if (!backBtn || !fileBtn || !fileInput || !statusDiv || !previewDiv || !applyBtn) return;
+
+    let fileParsedTags = null;
+
+    function enableApply(enable) {
+        applyBtn.disabled = !enable;
+        applyBtn.style.opacity = enable ? '1' : '0.5';
+        applyBtn.style.cursor = enable ? 'pointer' : 'not-allowed';
+    }
+
+    function showPreview(tags) {
+        statusDiv.style.display = '';
+        previewDiv.style.color = COLORS.TEXT_GRAY;
+        previewDiv.textContent = t('foundTags').replace('{n}', tags.length);
+        enableApply(tags.length > 0);
+    }
+
+    function showError(msg) {
+        statusDiv.style.display = '';
+        previewDiv.style.color = COLORS.ERROR_RED;
+        previewDiv.textContent = msg;
+        enableApply(false);
+    }
+
+    backBtn.onclick = () => {
+        updateModalContent(createSettingsUIHtml());
+        attachSettingsHandlers();
+    };
+
+    fileBtn.onclick = () => fileInput.click();
+
+    fileInput.onchange = () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        fileNameSpan.textContent = file.name;
+        fileParsedTags = null;
+        statusDiv.style.display = 'none';
+        const reader = new FileReader();
+        reader.onerror = () => { showError(t('errEmptyFile')); };
+        reader.onload = (e) => {
+            const text = e.target.result;
+            if (!text || !text.trim()) {
+                showError(t('errEmptyFile'));
+                return;
+            }
+            fileParsedTags = parseTagCsv(text);
+            if (fileParsedTags.length === 0) {
+                showError(t('errNoTags'));
+                fileParsedTags = null;
+            } else {
+                showPreview(fileParsedTags);
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    applyBtn.onclick = () => {
+        if (!fileParsedTags || fileParsedTags.length === 0) return;
+        applyBtn.disabled = true;
+        const mode = document.querySelector('[name="tm-import-mode"]:checked')?.value;
+        const finalTags = mode === 'merge'
+            ? [...new Set([...SettingsManager.getTags(), ...fileParsedTags])].sort()
+            : fileParsedTags;
+        SettingsManager.setTags(finalTags);
+        applyBtn.textContent = t('importSuccess').replace('{n}', finalTags.length);
+        applyBtn.style.background = COLORS.DARK_BLUE;
+        setTimeout(() => {
+            updateModalContent(createSettingsUIHtml());
+            attachSettingsHandlers();
+        }, 1500);
+    };
 }
 
 function gmGet(url) {
@@ -1018,6 +1225,7 @@ function gmGet(url) {
         });
     });
 }
+
 
 function toAPIDate(isoDate) {
     const [y, m, d] = isoDate.split('-');
@@ -1079,7 +1287,7 @@ function tsDate(ts) { return new Date(ts * 1000); }
 
 function fmtDate(ts) {
     const d = tsDate(ts);
-    const days   = _locale === 'uk' ? UA_DAYS   : EN_DAYS;
+    const days = _locale === 'uk' ? UA_DAYS : EN_DAYS;
     const months = _locale === 'uk' ? UA_MONTHS : EN_MONTHS;
     return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }

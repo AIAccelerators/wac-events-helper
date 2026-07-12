@@ -51,10 +51,14 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 - All CSS classes injected via `GM_addStyle` use the `tm-` prefix (e.g., `tm-btn-primary`, `tm-spinner`) to avoid collisions with page styles.
 - `LANGUAGE_FILTERS` — `BLOCKED_LANGUAGES` / `BLOCKED_CODES` constants control which events/talks are silently dropped (currently blocks Russian). The filter only applies when `_locale === 'uk'`; gate any new `isLanguageBlocked()` call site with `_locale !== 'uk' || !isLanguageBlocked(...)`.
 - `gmGet(url)` — wraps `GM_xmlhttpRequest` in a Promise; all network calls go through it.
+- `parseTagCsv(text)` — global-scope helper; detects `tag` column (RFC 4180), falls back to one-per-line; returns deduplicated sorted `string[]`. Defined immediately before `createImportUIHtml()`.
+- `updateModalContent(html)` — replaces `#tm-modal-content` innerHTML; use to swap in sub-modal views (e.g. import flow) while preserving the outer modal and its drag handler. Always call the matching `attach*Handlers()` immediately after.
+- **File download pattern:** `Blob + URL.createObjectURL` + temp `<a>.click()` works in Tampermonkey for triggering CSV/file downloads; `URL.revokeObjectURL` immediately after.
 - `buildArrayParam(name, values)` — encodes an array into repeated `&name%5B%5D=value` query params.
 - `parseJSONSafe(stored, default, validator)` — safe JSON parse with fallback; used by `SettingsManager` getters.
 - Date arrays (`UA_DAYS`/`UA_MONTHS`, `EN_DAYS`/`EN_MONTHS`) are hardcoded — `Intl` was rejected because Ukrainian requires genitive case. `fmtDate()` selects the pair via `_locale`.
 - HTML generation separated from listener attachment (e.g., `createSettingsUIHtml()` + `attachSettingsHandlers()`).
+- Avoid alignment-padded `=` (multiple spaces before `=` to align columns) — the IDE ESLint plugin (`.eslintrc.json`) flags `no-multi-spaces` even though the CLI flat config (`eslint.config.js`) does not. Use single spaces consistently.
 - Rendering functions return HTML as array of strings, joined at the end with `\n` (e.g., `renderSeriesGroup()`, `renderSingle()`, `renderTalk()`).
 - Language fallback: `talk.short_language || getLang(event)` (prefer talk's language, fall back to event's language).
 - **Security:** All user content (titles, URLs, language values) must be escaped with `escHtml()` to prevent XSS.
