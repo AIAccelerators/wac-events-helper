@@ -5,7 +5,6 @@
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
 // @connect      wearecommunity.io
-// @connect      *
 // @match        https://wearecommunity.io/events
 // @match        https://wearecommunity.io/events?*
 // @match        https://wearecommunity.io/events/*
@@ -96,9 +95,6 @@ const STRINGS = {
         saveTipEmpty: 'Please select at least 1 tag',
         importTags: 'Import Tags',
         back: '← Back',
-        tabUrl: 'URL',
-        tabFile: 'File',
-        fetchBtn: 'Fetch',
         chooseFile: 'Choose file…',
         foundTags: 'Found {n} tags',
         replaceMode: 'Replace',
@@ -106,7 +102,6 @@ const STRINGS = {
         applyBtn: 'Apply',
         importSuccess: 'Imported {n} tags',
         errNoTagColumn: 'No "tag" column found',
-        errFetchFailed: 'Fetch failed (status {s})',
         errEmptyFile: 'File is empty',
         errNoTags: 'No tags found in file',
     },
@@ -129,9 +124,6 @@ const STRINGS = {
         saveTipEmpty: 'Оберіть хоча б 1 тег',
         importTags: 'Імпорт тегів',
         back: '← Назад',
-        tabUrl: 'URL',
-        tabFile: 'Файл',
-        fetchBtn: 'Завантажити',
         chooseFile: 'Обрати файл…',
         foundTags: 'Знайдено тегів: {n}',
         replaceMode: 'Замінити',
@@ -139,7 +131,6 @@ const STRINGS = {
         applyBtn: 'Застосувати',
         importSuccess: 'Імпортовано тегів: {n}',
         errNoTagColumn: 'Колонка "tag" не знайдена',
-        errFetchFailed: 'Помилка завантаження (статус {s})',
         errEmptyFile: 'Файл порожній',
         errNoTags: 'Теги не знайдені у файлі',
     },
@@ -873,23 +864,11 @@ function createImportUIHtml() {
             <span style="font-size:13px;font-weight:600;">${escHtml(t('importTags'))}</span>
             <button id="tm-import-back" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('back'))}</button>
         </div>
-        <div style="display:flex;gap:0;margin-bottom:${SPACING.XXL};border-bottom:2px solid ${COLORS.MEDIUM_GRAY};">
-            <button id="tm-import-tab-url" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:none;border:none;border-bottom:2px solid ${COLORS.PRIMARY_BLUE};margin-bottom:-2px;font-size:13px;font-weight:600;color:${COLORS.PRIMARY_BLUE};">${escHtml(t('tabUrl'))}</button>
-            <button id="tm-import-tab-file" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-size:13px;color:${COLORS.TEXT_GRAY};">${escHtml(t('tabFile'))}</button>
-        </div>
-        <div id="tm-import-panel-url">
-            <input id="tm-import-url-input" type="text" placeholder="https://…"
-                style="width:100%;padding:${SPACING.MD} ${SPACING.LG};margin-bottom:${SPACING.LG};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;box-sizing:border-box;">
-            <button id="tm-import-fetch-btn"
-                style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.PRIMARY_BLUE};color:${COLORS.WHITE};border:none;border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('fetchBtn'))}</button>
-        </div>
-        <div id="tm-import-panel-file" style="display:none;">
-            <div style="display:flex;align-items:center;gap:${SPACING.LG};">
-                <button id="tm-import-file-btn" type="button"
-                    style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('chooseFile'))}</button>
-                <span id="tm-import-file-name" style="font-size:12px;color:${COLORS.TEXT_GRAY};">—</span>
-                <input id="tm-import-file-input" type="file" accept=".csv,.txt" style="display:none;">
-            </div>
+        <div style="display:flex;align-items:center;gap:${SPACING.LG};margin-bottom:${SPACING.XL};">
+            <button id="tm-import-file-btn" type="button"
+                style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;">${escHtml(t('chooseFile'))}</button>
+            <span id="tm-import-file-name" style="font-size:12px;color:${COLORS.TEXT_GRAY};">—</span>
+            <input id="tm-import-file-input" type="file" accept=".csv,.txt" style="display:none;">
         </div>
         <div id="tm-import-status" style="display:none;margin-top:${SPACING.XL};padding-top:${SPACING.XL};border-top:1px solid ${COLORS.MEDIUM_GRAY};">
             <div id="tm-import-preview" style="margin-bottom:${SPACING.LG};font-size:13px;"></div>
@@ -1128,32 +1107,20 @@ function attachSettingsHandlers() {
 }
 
 function attachImportHandlers() {
-    const backBtn       = document.getElementById('tm-import-back');
-    const tabUrlBtn     = document.getElementById('tm-import-tab-url');
-    const tabFileBtn    = document.getElementById('tm-import-tab-file');
-    const panelUrl      = document.getElementById('tm-import-panel-url');
-    const panelFile     = document.getElementById('tm-import-panel-file');
-    const urlInput      = document.getElementById('tm-import-url-input');
-    const fetchBtn      = document.getElementById('tm-import-fetch-btn');
-    const fileBtn       = document.getElementById('tm-import-file-btn');
-    const fileInput     = document.getElementById('tm-import-file-input');
-    const fileNameSpan  = document.getElementById('tm-import-file-name');
-    const statusDiv     = document.getElementById('tm-import-status');
-    const previewDiv    = document.getElementById('tm-import-preview');
-    const applyBtn      = document.getElementById('tm-import-apply-btn');
+    const backBtn      = document.getElementById('tm-import-back');
+    const fileBtn      = document.getElementById('tm-import-file-btn');
+    const fileInput    = document.getElementById('tm-import-file-input');
+    const fileNameSpan = document.getElementById('tm-import-file-name');
+    const statusDiv    = document.getElementById('tm-import-status');
+    const previewDiv   = document.getElementById('tm-import-preview');
+    const applyBtn     = document.getElementById('tm-import-apply-btn');
 
-    if (!backBtn || !tabUrlBtn || !tabFileBtn || !fetchBtn || !fileBtn || !applyBtn) return;
+    if (!backBtn || !fileBtn || !fileInput || !statusDiv || !previewDiv || !applyBtn) return;
 
-    let urlParsedTags  = null;
     let fileParsedTags = null;
-    let activeTab      = 'url';
-
-    function getActiveTags() {
-        return activeTab === 'url' ? urlParsedTags : fileParsedTags;
-    }
 
     function enableApply(enable) {
-        applyBtn.disabled    = !enable;
+        applyBtn.disabled      = !enable;
         applyBtn.style.opacity = enable ? '1' : '0.5';
         applyBtn.style.cursor  = enable ? 'pointer' : 'not-allowed';
     }
@@ -1172,54 +1139,9 @@ function attachImportHandlers() {
         enableApply(false);
     }
 
-    function switchTab(tab) {
-        activeTab = tab;
-        const isUrl = tab === 'url';
-        panelUrl.style.display  = isUrl ? '' : 'none';
-        panelFile.style.display = isUrl ? 'none' : '';
-        tabUrlBtn.style.borderBottomColor = isUrl ? COLORS.PRIMARY_BLUE : 'transparent';
-        tabUrlBtn.style.color             = isUrl ? COLORS.PRIMARY_BLUE : COLORS.TEXT_GRAY;
-        tabUrlBtn.style.fontWeight        = isUrl ? '600' : 'normal';
-        tabFileBtn.style.borderBottomColor = isUrl ? 'transparent' : COLORS.PRIMARY_BLUE;
-        tabFileBtn.style.color             = isUrl ? COLORS.TEXT_GRAY : COLORS.PRIMARY_BLUE;
-        tabFileBtn.style.fontWeight        = isUrl ? 'normal' : '600';
-        const tags = getActiveTags();
-        if (tags !== null) showPreview(tags);
-        else statusDiv.style.display = 'none';
-    }
-
     backBtn.onclick = () => {
         updateModalContent(createSettingsUIHtml());
         attachSettingsHandlers();
-    };
-
-    tabUrlBtn.onclick  = () => switchTab('url');
-    tabFileBtn.onclick = () => switchTab('file');
-
-    fetchBtn.onclick = async () => {
-        const url = urlInput.value.trim();
-        if (!url) return;
-        fetchBtn.disabled    = true;
-        fetchBtn.textContent = '…';
-        urlParsedTags = null;
-        statusDiv.style.display = 'none';
-        try {
-            const text = await gmGetText(url);
-            urlParsedTags = parseTagCsv(text);
-            if (urlParsedTags.length === 0) {
-                showError(t('errNoTags'));
-                urlParsedTags = null;
-            } else {
-                showPreview(urlParsedTags);
-            }
-        } catch (err) {
-            showError(err.status
-                ? t('errFetchFailed').replace('{s}', err.status)
-                : t('errFetchFailed').replace('{s}', '—'));
-        } finally {
-            fetchBtn.disabled    = false;
-            fetchBtn.textContent = t('fetchBtn');
-        }
     };
 
     fileBtn.onclick = () => fileInput.click();
@@ -1231,9 +1153,7 @@ function attachImportHandlers() {
         fileParsedTags = null;
         statusDiv.style.display = 'none';
         const reader = new FileReader();
-        reader.onerror = () => {
-            showError(t('errEmptyFile'));
-        };
+        reader.onerror = () => { showError(t('errEmptyFile')); };
         reader.onload = (e) => {
             const text = e.target.result;
             if (!text || !text.trim()) {
@@ -1252,18 +1172,15 @@ function attachImportHandlers() {
     };
 
     applyBtn.onclick = () => {
-        const tags = getActiveTags();
-        if (!tags || tags.length === 0) return;
+        if (!fileParsedTags || fileParsedTags.length === 0) return;
+        applyBtn.disabled = true;
         const mode = document.querySelector('[name="tm-import-mode"]:checked')?.value;
-        let finalTags;
-        if (mode === 'merge') {
-            finalTags = [...new Set([...SettingsManager.getTags(), ...tags])].sort();
-        } else {
-            finalTags = tags;
-        }
+        const finalTags = mode === 'merge'
+            ? [...new Set([...SettingsManager.getTags(), ...fileParsedTags])].sort()
+            : fileParsedTags;
         SettingsManager.setTags(finalTags);
-        applyBtn.textContent       = t('importSuccess').replace('{n}', finalTags.length);
-        applyBtn.style.background  = COLORS.DARK_BLUE;
+        applyBtn.textContent      = t('importSuccess').replace('{n}', finalTags.length);
+        applyBtn.style.background = COLORS.DARK_BLUE;
         setTimeout(() => {
             updateModalContent(createSettingsUIHtml());
             attachSettingsHandlers();
@@ -1291,24 +1208,6 @@ function gmGet(url) {
     });
 }
 
-function gmGetText(url) {
-    return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
-            method: 'GET',
-            url,
-            onload: function (response) {
-                if (response.status >= 200 && response.status < 300) {
-                    resolve(response.responseText);
-                } else {
-                    const err = new Error('HTTP ' + response.status);
-                    err.status = response.status;
-                    reject(err);
-                }
-            },
-            onerror: function () { reject(new Error('Network error: ' + url)); },
-        });
-    });
-}
 
 function toAPIDate(isoDate) {
     const [y, m, d] = isoDate.split('-');
