@@ -13,7 +13,7 @@ No build system, no package manager, no dependencies. The `.user.js` file is ins
 - **Install/update:** Drag `GetEvents.user.js` into the Tampermonkey dashboard, or open it directly in Chrome/Firefox with Tampermonkey active.
 - **Test:** Navigate to `https://wearecommunity.io/events` with Tampermonkey enabled.
 - **Lint:** `npx eslint GetEvents.user.js` (flat config in `eslint.config.js`; the legacy `.eslintrc.json` is unused but kept in sync).
-- **Version:** Bump `@version` in the userscript header on each release.
+- **Version:** Bump `@version` in the userscript header when shipping a release — not for every individual fix or commit.
 - **`@connect` directive:** Any new API domain must be added to `@connect` in the userscript header or `GM_xmlhttpRequest` calls to it will be blocked.
 
 ## Architecture
@@ -72,7 +72,7 @@ Everything lives in a single IIFE in `GetEvents.user.js`. On load, execution flo
 ### Format Constants (`EVENT_FORMATS` / `LEGACY_FORMAT_MAP`)
 
 - `EVENT_FORMATS` keys (e.g., `'ONLINE_ONLY'`) are what gets stored and compared; values are locale string arrays (UA/EN/RU) used for API calls (`flatMap(key => EVENT_FORMATS[key])`). Include ALL locale variants — the WAC API filters by exact locale strings, so missing a language variant means no results when the site is in that language.
-- `EVENT_FORMATS[KEY].at(0)` is the display label shown in the settings UI checkboxes (first element = primary/display locale).
+- Format display labels in the settings UI use `t('onlineOnly')` / `t('offlineWithStream')` — not `EVENT_FORMATS[KEY].at(0)` (which always returns the Ukrainian string). To add a new format, add its display label to `STRINGS` (both locales) and call `t()` at the checkbox site.
 - `LEGACY_FORMAT_MAP` migrates old stored locale strings to key strings on first read in `getFormats()`.
 - Co-locate `LEGACY_FORMAT_MAP` immediately after `EVENT_FORMATS` so migration stays near the definition.
 - To add a new format: add a key/value to `EVENT_FORMATS` and extend `DEFAULT_FORMATS`.
