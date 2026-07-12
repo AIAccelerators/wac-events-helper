@@ -818,6 +818,54 @@ function createSettingsUIHtml() {
     `;
 }
 
+function parseTagCsv(text) {
+    if (!text || !text.trim()) return [];
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return [];
+
+    function parseRow(line) {
+        const result = [];
+        let i = 0;
+        while (i < line.length) {
+            if (line[i] === '"') {
+                let field = '';
+                i++;
+                while (i < line.length) {
+                    if (line[i] === '"' && line[i + 1] === '"') { field += '"'; i += 2; }
+                    else if (line[i] === '"') { i++; break; }
+                    else { field += line[i++]; }
+                }
+                result.push(field.trim());
+                if (i < line.length && line[i] === ',') i++;
+            } else {
+                const end = line.indexOf(',', i);
+                if (end === -1) { result.push(line.slice(i).trim()); break; }
+                else { result.push(line.slice(i, end).trim()); i = end + 1; }
+            }
+        }
+        return result;
+    }
+
+    const firstCells = parseRow(lines[0]);
+    const headerCells = firstCells.map(c => c.toLowerCase());
+    const tagColIndex = headerCells.indexOf('tag');
+    const looksLikeCsv = firstCells.length > 1;
+
+    let tags;
+    if (tagColIndex !== -1) {
+        // Standard CSV mode: extract values from 'tag' column, skip header row
+        tags = lines.slice(1).map(line => (parseRow(line)[tagColIndex] || '').trim());
+    } else if (looksLikeCsv) {
+        // Multi-column CSV with no 'tag' column — return empty so caller shows error
+        return [];
+    } else {
+        // Plain list: each non-empty line is one tag
+        tags = lines;
+    }
+
+    return [...new Set(tags.filter(tag => tag.length > 0))].sort();
+}
+
 function attachSettingsHandlers() {
     TagsManager.init();
     const searchInput = document.getElementById('tm-settings-search');
@@ -1046,6 +1094,25 @@ function gmGet(url) {
                 catch (_) { /* eslint-disable-line no-unused-vars */ reject(new Error('JSON parse error: ' + url)); }
             },
              onerror: function () { reject(new Error('Network error: ' + url)); },
+        });
+    });
+}
+
+function gmGetText(url) {
+    return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url,
+            onload: function (response) {
+                if (response.status >= 200 && response.status < 300) {
+                    resolve(response.responseText);
+                } else {
+                    const err = new Error('HTTP ' + response.status);
+                    err.status = response.status;
+                    reject(err);
+                }
+            },
+            onerror: function () { reject(new Error('Network error: ' + url)); },
         });
     });
 }
