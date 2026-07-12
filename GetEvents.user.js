@@ -1366,7 +1366,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
                 // Filter talks by language BEFORE adding to allItems
                 const allowedTalks = talks.filter(talk => {
                     const talkLang = talk.short_language || getLang(e);
-                    return _locale !== 'uk' || !isLanguageBlocked(talkLang);
+                    return _locale !== 'uk' || !SettingsManager.getIgnoreRussian() || !isLanguageBlocked(talkLang);
                 });
 
                 allowedTalks.forEach(talk => {
@@ -1407,7 +1407,7 @@ function renderEvents(events, agendaMap, dateFromTs, dateTillTs) {
     // singles sorted in — filter out blocked languages when locale is 'uk'
     singles.forEach(item => {
         const eventLang = getLang(item.event);
-        if (_locale !== 'uk' || !isLanguageBlocked(eventLang)) {
+        if (_locale !== 'uk' || !SettingsManager.getIgnoreRussian() || !isLanguageBlocked(eventLang)) {
             mergedBlocks.push({ type: 'single', event: item.event });
         }
     });
