@@ -94,6 +94,7 @@ const STRINGS = {
         saveTip: 'Save your selected tags and formats',
         saveTipEmpty: 'Please select at least 1 tag',
         importTags: 'Import Tags',
+        exportTags: 'Export Tags',
         back: '← Back',
         chooseFile: 'Choose file…',
         foundTags: 'Found {n} tags',
@@ -123,6 +124,7 @@ const STRINGS = {
         saveTip: 'Зберегти вибрані теги та формати',
         saveTipEmpty: 'Оберіть хоча б 1 тег',
         importTags: 'Імпорт тегів',
+        exportTags: 'Експорт тегів',
         back: '← Назад',
         chooseFile: 'Обрати файл…',
         foundTags: 'Знайдено тегів: {n}',
@@ -806,6 +808,7 @@ function createSettingsUIHtml() {
 <button id="tm-settings-defaults" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Restore default tags and formats">${t('defaults')}</button>
 <button id="tm-settings-unselect-all" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Clear all selections">${t('unselectAll')}</button>
 <button id="tm-settings-import" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Import tags from CSV">${t('importTags')}</button>
+<button id="tm-settings-export" style="padding:${SPACING.MD} ${SPACING.XL};cursor:pointer;background:${COLORS.WHITE};color:${COLORS.TEXT_GRAY};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;flex:1;" title="Export saved tags to CSV">${t('exportTags')}</button>
         </div>
     `;
 }
@@ -1099,6 +1102,21 @@ function attachSettingsHandlers() {
         importBtn.onclick = () => {
             updateModalContent(createImportUIHtml());
             attachImportHandlers();
+        };
+    }
+
+    const exportBtn = document.getElementById('tm-settings-export');
+    if (exportBtn) {
+        exportBtn.onclick = () => {
+            const tags = SettingsManager.getTags();
+            const csv = 'tag\n' + tags.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tags.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         };
     }
 
