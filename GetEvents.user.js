@@ -4,7 +4,8 @@
 // @version      0.3.4
 // @description  Fetch and display AI events from wearecommunity.io via API
 // @author       Oleksandr_Kovalenko2
-// @connect      wearecommunity.io/api/v2
+// @connect      wearecommunity.io
+// @connect      *
 // @match        https://wearecommunity.io/events
 // @match        https://wearecommunity.io/events?*
 // @match        https://wearecommunity.io/events/*
@@ -93,6 +94,21 @@ const STRINGS = {
         offlineWithStream: 'Offline with streaming',
         saveTip: 'Save your selected tags and formats',
         saveTipEmpty: 'Please select at least 1 tag',
+        importTags: 'Import Tags',
+        back: '← Back',
+        tabUrl: 'URL',
+        tabFile: 'File',
+        fetchBtn: 'Fetch',
+        chooseFile: 'Choose file…',
+        foundTags: 'Found {n} tags',
+        replaceMode: 'Replace',
+        mergeMode: 'Merge',
+        applyBtn: 'Apply',
+        importSuccess: 'Imported {n} tags',
+        errNoTagColumn: 'No "tag" column found',
+        errFetchFailed: 'Fetch failed (status {s})',
+        errEmptyFile: 'File is empty',
+        errNoTags: 'No tags found in file',
     },
     uk: {
         from: 'Від:', till: 'До:',
@@ -111,6 +127,21 @@ const STRINGS = {
         offlineWithStream: 'Офлайн зі стрімом',
         saveTip: 'Зберегти вибрані теги та формати',
         saveTipEmpty: 'Оберіть хоча б 1 тег',
+        importTags: 'Імпорт тегів',
+        back: '← Назад',
+        tabUrl: 'URL',
+        tabFile: 'Файл',
+        fetchBtn: 'Завантажити',
+        chooseFile: 'Обрати файл…',
+        foundTags: 'Знайдено тегів: {n}',
+        replaceMode: 'Замінити',
+        mergeMode: "Об'єднати",
+        applyBtn: 'Застосувати',
+        importSuccess: 'Імпортовано тегів: {n}',
+        errNoTagColumn: 'Колонка "tag" не знайдена',
+        errFetchFailed: 'Помилка завантаження (статус {s})',
+        errEmptyFile: 'Файл порожній',
+        errNoTags: 'Теги не знайдені у файлі',
     },
 };
 
