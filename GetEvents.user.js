@@ -143,7 +143,6 @@ const STRINGS = {
 };
 
 // ─── Helper Functions (Global Scope) ─────────────────────────────────────────
-/* eslint-disable no-unused-vars */
 
 function getPageLocale() {
     const text = document.querySelector('#languageDropdown')?.textContent.trim();
@@ -212,10 +211,10 @@ function checkboxLabel(text, id, isChecked, marginBottom = '16px') {
 }
 
 function createDateInput(label, id, value) {
-    return `<label style="display:flex;align-items:center;gap:${SPACING.SM};color:${COLORS.TEXT_GRAY};">
-        <span style="font-size:12px;font-weight:500;">${label}</span>
-        <input id="${id}" type="date" value="${value}" style="padding:${SPACING.XS} ${SPACING.SM};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:12px;">
-    </label>`;
+    return `<div style="display:flex;align-items:center;gap:${SPACING.SM};color:${COLORS.TEXT_GRAY};">
+        <span style="font-size:13px;font-weight:500;">${label}</span>
+        <input id="${id}" type="date" value="${value}" style="padding:${SPACING.MD} ${SPACING.SM};border:1px solid ${COLORS.INPUT_BORDER};border-radius:${BORDER_RADIUS.SMALL};font-size:13px;font-family:inherit;box-sizing:border-box;">
+    </div>`;
 }
 
 function formatTimeRange(startTs, endTs, separator = '-') {
@@ -655,11 +654,11 @@ function createUI() {
     Object.assign(panel.style, {
         position: 'fixed',
         top: '8px',
-        left: '50%',
+        left: '60%',
         transform: 'translateX(-50%)',
         zIndex: '99999',
         background: COLORS.WHITE,
-        padding: `${SPACING.XL} ${SPACING.XXL}`,
+        padding: `${SPACING.MD} ${SPACING.LG}`,
         border: `1px solid ${COLORS.LIGHT_BORDER}`,
         borderRadius: BORDER_RADIUS.LARGE,
         display: 'flex',
@@ -679,15 +678,13 @@ function createUI() {
         borderRight: `1px solid ${COLORS.BORDER_GRAY}`,
     });
 
-    const fromLabel = document.createElement('label');
-    Object.assign(fromLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
-    fromLabel.innerHTML = createDateInput(t('from'), 'tm-from', toInputDate(today));
-    dateGroup.appendChild(fromLabel);
+    const fromWrapper = document.createElement('div');
+    fromWrapper.innerHTML = createDateInput(t('from'), 'tm-from', toInputDate(today));
+    dateGroup.appendChild(fromWrapper.firstElementChild);
 
-    const tillLabel = document.createElement('label');
-    Object.assign(tillLabel.style, { display: 'flex', alignItems: 'center', gap: SPACING.SM, color: COLORS.TEXT_GRAY });
-    tillLabel.innerHTML = createDateInput(t('till'), 'tm-till', toInputDate(weekLater));
-    dateGroup.appendChild(tillLabel);
+    const tillWrapper = document.createElement('div');
+    tillWrapper.innerHTML = createDateInput(t('till'), 'tm-till', toInputDate(weekLater));
+    dateGroup.appendChild(tillWrapper.firstElementChild);
 
     panel.appendChild(dateGroup);
 
@@ -704,6 +701,7 @@ function createUI() {
     Object.assign(getBtn.style, {
         padding: `${SPACING.MD} ${SPACING.XXL}`,
         cursor: 'pointer',
+        fontFamily: 'inherit',
         fontWeight: '600',
         background: COLORS.PRIMARY_BLUE,
         color: COLORS.WHITE,
@@ -721,6 +719,7 @@ function createUI() {
     Object.assign(settingsBtn.style, {
         padding: `${SPACING.MD} ${SPACING.XL}`,
         cursor: 'pointer',
+        fontFamily: 'inherit',
         fontWeight: '500',
         background: COLORS.WHITE,
         color: COLORS.TEXT_GRAY,
@@ -1567,7 +1566,7 @@ function showModal(html, type = 'events') {
     Object.assign(modal.style, {
         position: 'fixed',
         top: '80px',
-        left: '50%',
+        left: '60%',
         transform: 'translateX(-50%)',
         zIndex: '99998',
         background: '#fff',
